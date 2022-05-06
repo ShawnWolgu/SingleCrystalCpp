@@ -1,6 +1,7 @@
 #include "singleX.h"
 
-double timestep = 0.001, substep = 0.001, dtime = substep*timestep, m = 0.05, max_strain = 0.2, temperature=298;
+double timestep = 0.001, substep = 0.001, dtime = substep*timestep, m = 0.05, max_strain = 0.2, temperature = 298;
+int flag_harden = 0;
 
 void flag_to_idx(Matrix<double, 15, 1> flag, vector<int> &known_idx, vector<int> &unknown_idx){
     int unknown_cur = 0, known_cur = 0;
@@ -74,7 +75,6 @@ int main(int argc, char **argv)
     while (!slip_file.eof()){
         getline(slip_file,temp_slip);
         Slip tmp(temp_slip);
-        tmp.crss = 300;
         tmp.cal_shear_modulus(elastic_modulus);
         fcc_110_111.push_back(tmp);
     }
@@ -86,6 +86,7 @@ int main(int argc, char **argv)
     ofstream grain_info("grain_stepinfo.csv",ofstream::out);
     ofstream grain_str("grain_str.csv",ofstream::out);
     ofstream disloc_file("strain_disl.csv",ofstream::out);
+    ofstream crss_file("slip_crss.csv",ofstream::out);
     grain_info << "e11,e22,e33,e12,e13,e23,s11,s22,s33,s12,s13,s23" << endl;
     grain_str << "e11,e22,e33,e12,e13,e23,s11,s22,s33,s12,s13,s23" << endl;
     testgrain.elastic_modulus = elastic_modulus;
@@ -116,6 +117,7 @@ int main(int argc, char **argv)
         }
         testgrain.print_stress_strain_screen(grain_str);
         testgrain.print_dislocation(disloc_file);
+        testgrain.print_crss(crss_file);
     }
 
     grain_info.close();

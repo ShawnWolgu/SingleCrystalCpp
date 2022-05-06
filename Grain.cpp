@@ -11,7 +11,7 @@ Matrix3d Grain::get_vel_grad_plas(Matrix3d stress_3d){
     Matrix3d vel_grad_plas = Matrix3d::Zero();
     for (Slip &slip_component : *slip_sys) {
         //slip_component.update_strain(stress_tensor + stress_incr, (vel_grad_elas + Matrix3d::Identity()) * deform_grad_elas);
-        slip_component.cal_strain_ddh(stress_3d, deform_grad_elas, *slip_sys, lattice_cons);
+        slip_component.cal_strain(*this);
         vel_grad_plas += slip_component.dL_tensor();
     }
     return vel_grad_plas;
@@ -38,8 +38,7 @@ void Grain::update_status(Matrix3d L_dt_tensor, Matrix3d vel_grad_flag, Matrix3d
     strain_tensor = strain_tensor + 0.5 * (vel_grad_elas + vel_grad_plas + vel_grad_elas.transpose() + vel_grad_plas.transpose());
     deform_grad_elas = (vel_grad_elas + Matrix3d::Identity()) * deform_grad_elas;
     deform_grad_plas = deform_grad_elas.inverse() * deform_grad;
-    for (Slip &slip_component : *slip_sys) slip_component.update_dislocation();
-    //for (Slip &slip_component : *slip_sys) slip_component.update_acc_strain();        
+    for (Slip &slip_component : *slip_sys) slip_component.update_status(*this);
     spin_elas = 0.5 * (vel_grad_elas - vel_grad_elas.transpose());
     orientation = (spin_elas + Matrix3d::Identity()) * orientation * (spin_elas + Matrix3d::Identity()).transpose();
 }
@@ -140,5 +139,11 @@ void Grain::print_stress_strain_screen(ofstream &os){
 void Grain::print_dislocation(ofstream &os){
     os << strain_tensor(0,0) << ',' << strain_tensor(1,1) << ','  << strain_tensor(2,2) << ',';
     for (Slip &slip_component : *slip_sys) os << slip_component.SSD_density << ',';
+    os << endl;
+}
+
+void Grain::print_crss(ofstream &os){
+    os << strain_tensor(0,0) << ',' << strain_tensor(1,1) << ','  << strain_tensor(2,2) << ',' << (*slip_sys)[0].acc_strain << ",";
+    for (Slip &slip_component : *slip_sys) os << slip_component.crss << ',';
     os << endl;
 }
