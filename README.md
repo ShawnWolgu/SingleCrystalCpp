@@ -3,6 +3,7 @@
 
 ## 目前实现的功能
 * 支持混合边界条件
+* Voce硬化模型
 * 位错速度模型
 
 ## 编译
@@ -30,4 +31,5 @@ A simple crystal plasticity model for single crystal, developed in C++.
 
 ## Input Files
 * Slip systems and the model parameters
+* Voce Hardening
 * Loading and boundary conditions
