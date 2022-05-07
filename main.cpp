@@ -62,6 +62,8 @@ int main(int argc, char **argv)
     vector<Slip> fcc_110_111;
     Matrix3d strain_tensor = Matrix3d::Zero(), strain_plastic = Matrix3d::Zero(), strain_elastic =  Matrix3d::Zero(), stress_tensor = Matrix3d::Zero();
 
+    flag_harden = atoi(argv[1]);
+
     //[Slip system setting]: wait to be extracted:
     const Matrix6d elastic_modulus{
         {251700, 107900, 107900, 0, 0, 0},
@@ -90,7 +92,7 @@ int main(int argc, char **argv)
     grain_info << "e11,e22,e33,e12,e13,e23,s11,s22,s33,s12,s13,s23" << endl;
     grain_str << "e11,e22,e33,e12,e13,e23,s11,s22,s33,s12,s13,s23" << endl;
     testgrain.elastic_modulus = elastic_modulus;
-    testgrain.lattice_cons = 3.88;
+    testgrain.lattice_vec = Matrix3d::Identity() * 3.88;
     testgrain.set_slip_sys(fcc_110_111);
     testgrain.print_stress_strain(grain_info);
     testgrain.print_stress_strain(grain_str);

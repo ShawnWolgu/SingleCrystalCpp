@@ -5,6 +5,7 @@ Grain::Grain(): deform_grad(Matrix3d::Identity()), deform_grad_elas(deform_grad)
     
 void Grain::set_slip_sys(vector<Slip> &s){
     slip_sys = &s;
+    for (Slip &slip_component : *slip_sys) slip_component.update_status(*this);
 }
 
 Matrix3d Grain::get_vel_grad_plas(Matrix3d stress_3d){
@@ -19,6 +20,8 @@ Matrix3d Grain::get_vel_grad_plas(Matrix3d stress_3d){
 
 void Grain::update_status(Matrix3d L_dt_tensor, Matrix3d vel_grad_flag, Matrix3d stress_incr, Matrix3d dstress_flag){
     Matrix3d vel_grad_elas = Matrix3d::Zero(), vel_grad_plas = Matrix3d::Zero(), stress_iter_save = Matrix3d::Zero(), spin_elas = Matrix3d::Zero();
+    // update strain_rate
+    if (L_dt_tensor != Matrix3d::Zero()) strain_rate = L_dt_tensor.cwiseAbs().maxCoeff() / timestep;
 
     // begin iteration
     int iter_num = 0;

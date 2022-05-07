@@ -35,7 +35,7 @@ void params_convert_to_matrix(Matrix<double, 15, 1> &params, Matrix3d &vel_grad_
     stress_incr = tensor_trans_order(temp_stress_incr);
 }
 
-Matrix3d update_stress(Matrix3d strain_elastic, Matrix6d elastic_modulus){
+Matrix3d calc_stress(Matrix3d strain_elastic, Matrix6d elastic_modulus){
     Vector6d eps_elastic, sig_vector;
     Matrix3d stress_tensor = Matrix3d::Identity();
     eps_elastic = tensor_trans_order(strain_elastic);
