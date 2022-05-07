@@ -4,6 +4,7 @@
 ## 目前实现的功能
 * 支持混合边界条件
 * Voce硬化模型
+* 位错硬化模型
 * 位错速度模型
 
 ## 编译
@@ -16,11 +17,14 @@
 * 滑移系以及塑性模型参数
 * 加载与边界条件
 
+
 # SingleCrystalCpp
 A simple crystal plasticity model for single crystal, developed in C++.
 
 ## Available Features
 * Hybrid boundary conditions
+* Voce hardening
+* Dislocation density hardening
 * Dislocation velocity model for hardening
 
 ## Compiling
