@@ -2,30 +2,17 @@
 
 Slip::Slip() = default;
 
-Slip::Slip(Vector3d temp_bv, Vector3d temp_pn): burgers_vec(temp_bv), plane_norm(temp_pn/temp_pn.norm()), plane_norm_disp(temp_pn),
-        schmidt(temp_bv * (temp_pn/temp_pn.norm()).transpose()) {
-            strain_rate_slip = 0.01;
-};
-
-Slip::Slip(istream &is) {
-    is >> burgers_vec(0) >> burgers_vec(1) >> burgers_vec(2) >> plane_norm_disp(0) >> plane_norm_disp(1) >> plane_norm_disp(2);
-    plane_norm = plane_norm_disp / plane_norm_disp.norm();
-    schmidt = burgers_vec * plane_norm.transpose();
-    strain_rate_slip = 0.01;
-};
-
-Slip::Slip(std::string &is) {
-    stringstream stream(is);
-    double temp[16]={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
-    int temp_idx = 0;
-    while (!stream.eof()) stream >> temp[temp_idx++];
-    for (temp_idx=0; temp_idx<16; ++temp_idx){
-        if (temp_idx < 3) plane_norm_disp(temp_idx) = temp[temp_idx];
+Slip::Slip(Vector6d &slip_info, vector<double> &hardens, Matrix3d lattice_vec) {
+    harden_params = hardens;
+    for (int temp_idx=0; temp_idx<6; ++temp_idx){
+        if (temp_idx < 3) plane_norm_disp(temp_idx) = slip_info(temp_idx);
         else {
-            if(temp_idx < 6) burgers_vec(temp_idx-3) = temp[temp_idx];
-            else harden_params.push_back(temp[temp_idx]);
-            }
+            if(temp_idx < 6) burgers_vec(temp_idx-3) = slip_info(temp_idx);
+        }
     }
+    plane_norm_disp = (plane_norm_disp.transpose() * lattice_vec).transpose();
+    burgers_vec = (burgers_vec.transpose() * lattice_vec).transpose();
+
     plane_norm = plane_norm_disp / plane_norm_disp.norm();
     schmidt = burgers_vec/burgers_vec.norm() * plane_norm.transpose();
 
@@ -139,16 +126,16 @@ void Slip::update_status(Grain &grain){
     switch (flag_harden)
     {
     case 0:
-        update_voce(*grain.slip_sys);
+        update_voce(grain.slip_sys);
         break;
     case 1:
-        update_ddhard(grain.deform_grad_elas, *grain.slip_sys, grain.lattice_vec);
+        update_ddhard(grain.deform_grad_elas, grain.slip_sys);
         break;
     case 2:
-        update_disvel(grain.deform_grad_elas, *grain.slip_sys, grain.lattice_vec);
+        update_disvel(grain.deform_grad_elas, grain.slip_sys);
         break;
     default:
-        update_voce(*grain.slip_sys);
+        update_voce(grain.slip_sys);
         break;
     }
 }
@@ -165,7 +152,7 @@ void Slip::update_voce(vector<Slip> &slip_sys){
     }
 }
 
-void Slip::update_ddhard(Matrix3d deform_grad_elas, vector<Slip> &slip_sys, Matrix3d lattice_vec){
+void Slip::update_ddhard(Matrix3d deform_grad_elas, vector<Slip> &slip_sys){
     /*
      * Update SSD_density and dislocation density hardening model parameters.
      */
@@ -175,7 +162,7 @@ void Slip::update_ddhard(Matrix3d deform_grad_elas, vector<Slip> &slip_sys, Matr
            drag_stress = harden_params[6];
     const double chi = 0.9, k_sub = 0.086, q = 4;
 
-    burgers = (deform_grad_elas * lattice_vec * burgers_vec).norm() * 1e-10;
+    burgers = (deform_grad_elas * burgers_vec).norm() * 1e-10;
     tau_forest = chi * burgers * shear_modulus * sqrt(SSD_density);
     tau_subs = k_sub * shear_modulus * burgers * sqrt(subs_density) * log10(1/burgers/sqrt(subs_density));
 
@@ -189,7 +176,7 @@ void Slip::update_ddhard(Matrix3d deform_grad_elas, vector<Slip> &slip_sys, Matr
     update_params[0] = subs_density, update_params[1] = burgers; 
 }
 
-void Slip::update_disvel(Matrix3d deform_grad_elas, vector<Slip> &slip_sys, Matrix3d lattice_vec){
+void Slip::update_disvel(Matrix3d deform_grad_elas, vector<Slip> &slip_sys){
     /*
      * Update SSD_density and dislocation velocity model parameters.
      */
@@ -205,7 +192,7 @@ void Slip::update_disvel(Matrix3d deform_grad_elas, vector<Slip> &slip_sys, Matr
         disl_density_perp += isys.SSD_density * sqrt(1-cosine_n_m*cosine_n_m);
     }
     
-    burgers = (deform_grad_elas * lattice_vec * burgers_vec).norm() * 1e-10;
+    burgers = (deform_grad_elas * burgers_vec).norm() * 1e-10;
     tau_ath = c_ath * shear_modulus * burgers * sqrt(disl_density_perp); 
     tau_th = (k_boltzmann*temperature + c_cross * E_activation * burgers* sqrt(disl_density_for))/(c_act * pow(burgers,3) * 20) / 1e6;
     freq_kink = 2*debye_freq/(400*burgers) * c_l/sqrt(disl_density_for) * exp(-1* E_activation/(k_boltzmann * temperature));

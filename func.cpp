@@ -48,7 +48,16 @@ Vector6d get_vec_only_ith(Vector6d &vector_base, int i){
     Vector6d vec_ith = Vector6d::Zero();
     vec_ith(i) = vector_base(i) + 1e-2;
     return vec_ith;
-};
+}
+
+void flag_to_idx(Matrix<double, 15, 1> flag, vector<int> &known_idx, vector<int> &unknown_idx){
+    int unknown_cur = 0, known_cur = 0;
+    for (int idx = 0;idx != 15; ++idx) {
+        if(flag(idx) == 0) {unknown_idx[unknown_cur] = idx; ++unknown_cur;}
+        else {known_idx[known_cur] = idx; ++known_cur;}
+    }
+    if (unknown_cur != 6 || known_cur != 9) throw "ERROR: wrong number of unknown parameters in L or dsigma!";
+}
 
 ostream &operator<<(ostream &os, const Slip &slip){
     os << "Slip system: [" << slip.burgers_vec.transpose() << "](" << slip.plane_norm_disp.transpose() << "), CRSS = " << slip.crss << endl

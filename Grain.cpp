@@ -2,15 +2,19 @@
 
 Grain::Grain(): deform_grad(Matrix3d::Identity()), deform_grad_elas(deform_grad), deform_grad_plas(Matrix3d::Zero()), stress_tensor(Matrix3d::Zero()),
             strain_tensor(Matrix3d::Zero()), orientation(Matrix3d::Identity()), elastic_modulus(Matrix6d::Identity()) {};
-    
-void Grain::set_slip_sys(vector<Slip> &s){
-    slip_sys = &s;
-    for (Slip &slip_component : *slip_sys) slip_component.update_status(*this);
+
+Grain::Grain(Matrix6d elastic_mod, Matrix3d lat_vecs, vector<Slip> s){
+    deform_grad = Matrix3d::Identity(), deform_grad_elas = deform_grad, deform_grad_plas = stress_tensor = Matrix3d::Zero(),
+    strain_tensor = Matrix3d::Zero(), orientation = Matrix3d::Identity(), elastic_modulus = Matrix6d::Identity();
+    elastic_modulus = elastic_mod;
+    lattice_vec = lat_vecs;
+    for (Slip &slip_component : s) slip_sys.push_back(slip_component); 
+    for (Slip &slip_component : slip_sys) slip_component.update_status(*this);
 }
 
 Matrix3d Grain::get_vel_grad_plas(Matrix3d stress_3d){
     Matrix3d vel_grad_plas = Matrix3d::Zero();
-    for (Slip &slip_component : *slip_sys) {
+    for (Slip &slip_component : slip_sys) {
         //slip_component.update_strain(stress_tensor + stress_incr, (vel_grad_elas + Matrix3d::Identity()) * deform_grad_elas);
         slip_component.cal_strain(*this);
         vel_grad_plas += slip_component.dL_tensor();
@@ -41,7 +45,7 @@ void Grain::update_status(Matrix3d L_dt_tensor, Matrix3d vel_grad_flag, Matrix3d
     strain_tensor = strain_tensor + 0.5 * (vel_grad_elas + vel_grad_plas + vel_grad_elas.transpose() + vel_grad_plas.transpose());
     deform_grad_elas = (vel_grad_elas + Matrix3d::Identity()) * deform_grad_elas;
     deform_grad_plas = deform_grad_elas.inverse() * deform_grad;
-    for (Slip &slip_component : *slip_sys) slip_component.update_status(*this);
+    for (Slip &slip_component : slip_sys) slip_component.update_status(*this);
     spin_elas = 0.5 * (vel_grad_elas - vel_grad_elas.transpose());
     orientation = (spin_elas + Matrix3d::Identity()) * orientation * (spin_elas + Matrix3d::Identity()).transpose();
 }
@@ -89,6 +93,8 @@ void Grain::cal_matrix_dpwp_by_sigma(Matrix3d stress_incr){
             if(i >= 3) wp_by_sigma(i-3,j) = wp_6d(i) / (sigma_6d(j)+1e-2);
         }
     }
+    //cout << dp_by_sigma * sigma_6d << endl;
+    //cout << 0.5 * get_vel_grad_plas(sigma_3d) + 0.5 * get_vel_grad_plas(sigma_3d).transpose() << endl;
 }
 
 Matrix<double, 15, 15> Grain::mid_matrix(){
@@ -130,10 +136,7 @@ void Grain::print_stress_strain(ofstream &os){
        << stress_tensor(2,2) << ',' << stress_tensor(0,1) << ','  << stress_tensor(0,2) << ',' << stress_tensor(1,2) << ','  << endl;
 }
 
-void Grain::print_stress_strain_screen(ofstream &os){
-    os << strain_tensor(0,0) << ',' << strain_tensor(1,1) << ','  << strain_tensor(2,2) << ',' << strain_tensor(0,1) << ',' 
-       << strain_tensor(0,2) << ',' << strain_tensor(1,2) << ','  << stress_tensor(0,0) << ',' << stress_tensor(1,1) << ',' 
-       << stress_tensor(2,2) << ',' << stress_tensor(0,1) << ','  << stress_tensor(0,2) << ',' << stress_tensor(1,2) << ','  << endl;
+void Grain::print_stress_strain_screen(){
     cout << strain_tensor(0,0) << '\t' << strain_tensor(1,1) << '\t'  << strain_tensor(2,2) << '\t' << strain_tensor(0,1) << '\t' 
        << strain_tensor(0,2) << '\t' << strain_tensor(1,2) << '\t'  << stress_tensor(0,0) << '\t' << stress_tensor(1,1) << '\t' 
        << stress_tensor(2,2) << '\t' << stress_tensor(0,1) << '\t'  << stress_tensor(0,2) << '\t' << stress_tensor(1,2) << '\t'  << endl;
@@ -141,12 +144,12 @@ void Grain::print_stress_strain_screen(ofstream &os){
 
 void Grain::print_dislocation(ofstream &os){
     os << strain_tensor(0,0) << ',' << strain_tensor(1,1) << ','  << strain_tensor(2,2) << ',';
-    for (Slip &slip_component : *slip_sys) os << slip_component.SSD_density << ',';
+    for (Slip &slip_component : slip_sys) os << slip_component.SSD_density << ',';
     os << endl;
 }
 
 void Grain::print_crss(ofstream &os){
-    os << strain_tensor(0,0) << ',' << strain_tensor(1,1) << ','  << strain_tensor(2,2) << ',' << (*slip_sys)[0].acc_strain << ",";
-    for (Slip &slip_component : *slip_sys) os << slip_component.crss << ',';
+    os << strain_tensor(0,0) << ',' << strain_tensor(1,1) << ','  << strain_tensor(2,2) << ',' << (slip_sys)[0].acc_strain << ",";
+    for (Slip &slip_component : slip_sys) os << slip_component.crss << ',';
     os << endl;
 }

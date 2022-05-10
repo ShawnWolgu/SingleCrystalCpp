@@ -19,4 +19,4 @@ find_package( Eigen3 3.3 REQUIRED )
 include_directories( ${EIGEN3_INCLUDE_DIR} )
 include_directories( ${EIGEN3U_INCLUDE_DIR} )
 
-add_executable(cmake_app main.cpp Slip.cpp Grain.cpp func.cpp)
+add_executable(SXCpp main.cpp Slip.cpp Grain.cpp func.cpp global.cpp load.cpp read_input.cpp write_output.cpp)
