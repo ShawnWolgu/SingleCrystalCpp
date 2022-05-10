@@ -23,20 +23,11 @@ Matrix3d Grain::get_vel_grad_plas(Matrix3d stress_3d){
 }
 
 void Grain::update_status(Matrix3d L_dt_tensor, Matrix3d vel_grad_flag, Matrix3d stress_incr, Matrix3d dstress_flag){
-    Matrix3d vel_grad_elas = Matrix3d::Zero(), vel_grad_plas = Matrix3d::Zero(), stress_iter_save = Matrix3d::Zero(), spin_elas = Matrix3d::Zero();
+    Matrix3d vel_grad_elas = Matrix3d::Zero(), vel_grad_plas = Matrix3d::Zero(), spin_elas = Matrix3d::Zero();
     // update strain_rate
     if (L_dt_tensor != Matrix3d::Zero()) strain_rate = L_dt_tensor.cwiseAbs().maxCoeff() / timestep;
 
-    // begin iteration
-    int iter_num = 0;
-    do{
-        stress_iter_save = stress_incr;
-        //Solve stress_incr, L_dt_tensor
-        cal_matrix_dpwp_by_sigma(stress_incr);
-        solve_L_dsigma(L_dt_tensor, vel_grad_flag, stress_incr, dstress_flag);
-        ++ iter_num;
-        if(iter_num > 1000) {cout << (stress_incr - stress_iter_save).norm() << endl << "Not converged... but still going" << endl; break;}
-    } while ((stress_incr - stress_iter_save).norm() > 1e-1);
+    solve_Lsig_iteration(L_dt_tensor, vel_grad_flag, stress_incr, dstress_flag);
     vel_grad_plas = get_vel_grad_plas(stress_tensor + stress_incr);
     vel_grad_elas = L_dt_tensor - vel_grad_plas;
     // end iteration
@@ -48,6 +39,19 @@ void Grain::update_status(Matrix3d L_dt_tensor, Matrix3d vel_grad_flag, Matrix3d
     for (Slip &slip_component : slip_sys) slip_component.update_status(*this);
     spin_elas = 0.5 * (vel_grad_elas - vel_grad_elas.transpose());
     orientation = (spin_elas + Matrix3d::Identity()) * orientation * (spin_elas + Matrix3d::Identity()).transpose();
+}
+
+void Grain::solve_Lsig_iteration(Matrix3d &L_dt_tensor, Matrix3d &vel_grad_flag, Matrix3d &stress_incr, Matrix3d &dstress_flag){
+    int iter_num = 0;
+    Matrix3d stress_iter_save = Matrix3d::Zero();
+    do{
+        stress_iter_save = stress_incr;
+        //Solve stress_incr, L_dt_tensor
+        cal_matrix_dpwp_by_sigma(stress_incr);
+        solve_L_dsigma(L_dt_tensor, vel_grad_flag, stress_incr, dstress_flag);
+        ++ iter_num;
+        if(iter_num > 1000) {cout << (stress_incr - stress_iter_save).norm() << endl << "Not converged... but still going" << endl; break;}
+    } while ((stress_incr - stress_iter_save).norm() > 1e-1);
 }
 
 Matrix<double, 6, 15> Grain::left_matrix(){
