@@ -84,7 +84,6 @@ class Grain{
         double strain_rate = 1e-3;
         Grain();
         Grain(Matrix6d elastic_mod, Matrix3d lat_vecs, vector<Slip> s);
-        void set_slip_sys(vector<Slip> s);
         void update_status(Matrix3d L_dt_tensor, Matrix3d vel_grad_flag, Matrix3d stress_incr, Matrix3d dstress_flag);
         void print_stress_strain(ofstream &os);
         void print_stress_strain_screen();
@@ -97,6 +96,7 @@ class Grain{
         Matrix<double, 15, 15> mid_matrix();
         Matrix6d get_C_ij_pri(Vector6d &stress_6d);
         Matrix<double, 6, 3> get_Sigma_ik(Vector6d &stress_6d);
+        void solve_Lsig_iteration(Matrix3d &L_dt_tensor, Matrix3d &vel_grad_flag, Matrix3d &stress_incr, Matrix3d &dstress_flag);
         void cal_matrix_dpwp_by_sigma(Matrix3d stress_incr);
         void solve_L_dsigma(Matrix3d &vel_grad_elas, Matrix3d &vel_grad_flag, Matrix3d &stress_incr, Matrix3d &dstress_flag);
 };
