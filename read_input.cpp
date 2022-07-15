@@ -2,6 +2,8 @@
 
 Matrix6d read_elastic(ifstream &is);
 Matrix3d read_lattice(ifstream &is);
+Matrix3d read_orientation(ifstream &is);
+Matrix3d read_euler(ifstream &is);
 void print_harden_law();
 void add_slips(ifstream &is, vector<Slip> &slips, Matrix3d lattice_vecs);
 Matrix3d load_matrix_input(ifstream &load_file);
@@ -11,7 +13,7 @@ Grain read_grain(){
     ifstream input_file("SingleX.txt");
     string input_line;
     Matrix6d elastic_modulus;
-    Matrix3d lattice_vecs;
+    Matrix3d lattice_vecs, orientation;
     vector<Slip> slips;
     while (!input_file.eof())
     {
@@ -31,6 +33,14 @@ Grain read_grain(){
                 lattice_vecs = read_lattice(input_file);
                 continue;
             }
+            if((input_line.find("Orientation") != input_line.npos) || (input_line.find("orientation") != input_line.npos)) {
+                orientation = read_orientation(input_file);
+                continue;
+            }
+            if((input_line.find("Euler") != input_line.npos) || (input_line.find("euler") != input_line.npos)) {
+                orientation = read_euler(input_file);
+                continue;
+            }
             if((input_line.find("Slip") != input_line.npos) || (input_line.find("slip") != input_line.npos)) {
                 add_slips(input_file, slips, lattice_vecs); 
                 continue;
@@ -41,7 +51,7 @@ Grain read_grain(){
     }
     input_file.close();
     for(auto &islip : slips) islip.cal_shear_modulus(elastic_modulus);
-    return Grain(elastic_modulus, lattice_vecs, slips);
+    return Grain(elastic_modulus, lattice_vecs, slips, orientation);
 }
 
 Matrix6d read_elastic(ifstream &is){
@@ -74,6 +84,40 @@ Matrix3d read_lattice(ifstream &is){
     }
     cout << "Read Lattice Vectors:" << endl << lattice << endl;
     return lattice;
+}
+
+Matrix3d read_orientation(ifstream &is){
+    int row_num = 0, temp_idx = 0;
+    double temp[3] = {0,0,0};
+    string temp_str;
+    Matrix3d orientation;
+    for(;row_num !=3; ++row_num){
+        temp_idx = 0;
+        getline(is, temp_str);
+        stringstream stream(temp_str);
+        while(!stream.eof()) stream >> temp[temp_idx++];
+        orientation.row(row_num) << temp[0], temp[1], temp[2];
+    }
+    cout << "Read Orientation Matrix:" << endl << orientation << endl;    
+    return orientation;
+}
+
+Matrix3d read_euler(ifstream &is){
+    int row_num = 0, temp_idx = 0;
+    double temp[3] = {0,0,0};
+    string temp_str;
+    Vector3d euler_angle;
+    Matrix3d orientation;
+    temp_idx = 0;
+    getline(is, temp_str);
+    stringstream stream(temp_str);
+    while(!stream.eof()) stream >> temp[temp_idx++];
+    euler_angle << temp[0], temp[1], temp[2];
+    cout << "Euler Angle:" << endl << euler_angle << endl; 
+    orientation = Euler_trans(euler_angle);
+    cout << "Read Orientation Matrix (From Euler Angle):" << endl << orientation << endl; 
+    cout << "Euler Angle:" << endl << Euler_trans(orientation) << endl; 
+    return orientation;
 }
 
 void print_harden_law(){

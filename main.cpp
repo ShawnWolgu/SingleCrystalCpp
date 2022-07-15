@@ -16,5 +16,6 @@ int main(int argc, char **argv)
     singleXloading(testgrain, vel_grad_tensor, vel_grad_flag, stress_incr, dstress_flag);
     
     outfile_close();
+    cout << "finish!" << endl;
     return 0;
 }

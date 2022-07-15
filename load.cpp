@@ -2,6 +2,7 @@
 
 void singleXloading(Grain &grain, Matrix3d vel_grad_tensor, Matrix3d vel_grad_flag, Matrix3d stress_incr, Matrix3d dstress_flag){
     int step_ctrl = 0;
+    int op_control = 0;
     while(grain.strain_tensor.cwiseAbs().maxCoeff() < max_strain){
         step_ctrl = 0;
         while(step_ctrl < 1/substep){
@@ -10,6 +11,10 @@ void singleXloading(Grain &grain, Matrix3d vel_grad_tensor, Matrix3d vel_grad_fl
             substep_output(grain);
             ++step_ctrl;
         }
-        grain_output(grain);
+        if(op_control==0){
+            grain_output(grain);
+            op_control = 0;
+        }
+        else{op_control+=1;}
     }
 }

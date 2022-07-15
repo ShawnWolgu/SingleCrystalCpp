@@ -1,4 +1,8 @@
 cmake_minimum_required(VERSION 3.23)
+
+set(CMAKE_C_COMPILER "D:/ProgramData/MinGW/mingw64/bin/gcc.exe")
+set(CMAKE_CXX_COMPILER "D:/ProgramData/MinGW/mingw64/bin/g++.exe")
+
 project(SINGLEX)
 set(CMAKE_CXX_STANDARD 17)
 
@@ -10,13 +14,13 @@ set(CMAKE_CXX_STANDARD 17)
 #
 # CMAKE_MODULE_PATH: Search path for the module Eigen3 to be loaded by find_package
 #
-SET( EIGEN3_INCLUDE_DIR "E:/eigen-3.4.0/" )
-SET( EIGEN3U_INCLUDE_DIR "E:/eigen-3.4.0/unsupported/" )
-SET( CMAKE_MODULE_PATH "E:/eigen-3.4.0/cmake" )
+SET( EIGEN3_INCLUDE_DIR "D:/ProgramData/eigen-3.4.0/" )
+SET( EIGEN3U_INCLUDE_DIR "D:/ProgramData/eigen-3.4.0/unsupported/" )
+SET( CMAKE_MODULE_PATH "D:/ProgramData/eigen-3.4.0/cmake" )
 
 find_package( Eigen3 3.3 REQUIRED )
 # include_directories is needed for the compiler to know where looking for Eigen3 header files to be included 
 include_directories( ${EIGEN3_INCLUDE_DIR} )
 include_directories( ${EIGEN3U_INCLUDE_DIR} )
 
-add_executable(SXCpp main.cpp Slip.cpp Grain.cpp func.cpp global.cpp load.cpp read_input.cpp write_output.cpp)
+add_executable(SXCpp main.cpp Slip.cpp Grain.cpp disvel.cpp func.cpp global.cpp load.cpp read_input.cpp write_output.cpp singleX.h)
