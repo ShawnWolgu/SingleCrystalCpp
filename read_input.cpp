@@ -170,15 +170,18 @@ void add_slips(ifstream &is, vector<Slip> &slips, Matrix3d lattice_vecs){
 }
 
 void read_load(Matrix3d &vel_grad_tensor, Matrix3d &vel_grad_flag, Matrix3d &stress_incr, Matrix3d &dstress_flag){
+    cout << "Open Load File." << endl;
     ifstream load_file("Load.txt",ifstream::in);
     string step_conf_string;
     getline(load_file, step_conf_string);
     // args: 1: timestep, 2: substep, 3: max_strain
     step_config(step_conf_string);
+    cout << "Step configured." << endl;
     vel_grad_tensor = load_matrix_input(load_file);
     vel_grad_flag = load_matrix_input(load_file);
     stress_incr = load_matrix_input(load_file);
     dstress_flag = load_matrix_input(load_file);
+    cout << "Boundary conditions configured." << endl;
     load_file.close();
 }
 
@@ -193,7 +196,7 @@ Matrix3d load_matrix_input(ifstream &load_file){
     int line_count = 0;
     while(!load_file.eof() && line_count != 3){  
         getline(load_file,matrix_str);
-        if(matrix_str == "") continue;
+        if(matrix_str == "" || matrix_str == "\r")  continue;
         stringstream stream(matrix_str);
         int temp_idx = 0;      
         for(; !stream.eof() && temp_idx != 3; temp_idx++) stream >> *(temp_ar++);

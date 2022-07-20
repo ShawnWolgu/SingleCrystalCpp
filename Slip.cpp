@@ -202,6 +202,7 @@ void Slip::update_disvel(Matrix3d deform_grad_elas, vector<Slip> &slip_sys){
     back_stress = c_backstress * shear_modulus * burgers * sqrt(disl_density_perp) + HP_stress;
     crss = Peierls_stress + back_stress; 
     barrier_distance = plane_norm_disp.cross(burgers_vec).norm() * 1e-10;
+    acc_strain += abs(strain_rate_slip) * dtime;
 
     update_params[0] = burgers, update_params[1] = disl_density_for, update_params[2] = disl_density_perp;
     update_params[3] = back_stress, update_params[4] = barrier_distance;

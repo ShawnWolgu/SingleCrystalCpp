@@ -40,6 +40,7 @@ void Grain::update_status(Matrix3d L_dt_tensor, Matrix3d vel_grad_flag, Matrix3d
     // update elastic modulus
     elastic_modulus = rotate_6d_stiff_modu(elastic_modulus_ref,orientation);
     solve_Lsig_iteration(L_dt_tensor, vel_grad_flag, stress_incr, dstress_flag);
+    L_dt_tensor(0,1) = 0, L_dt_tensor(1,0) = 0; // fix Omega12 = 0
     vel_grad_plas = get_vel_grad_plas(stress_tensor + stress_incr);
     vel_grad_elas = L_dt_tensor - vel_grad_plas;
     // end iteration
@@ -50,7 +51,7 @@ void Grain::update_status(Matrix3d L_dt_tensor, Matrix3d vel_grad_flag, Matrix3d
     deform_grad_plas = deform_grad_elas.inverse() * deform_grad;
     for (Slip &slip_component : slip_sys) slip_component.update_status(*this);
     spin_elas = 0.5 * (vel_grad_elas - vel_grad_elas.transpose());
-    orientation = Rodrigues(spin_elas) * orientation; 
+    orientation = orientation * Rodrigues(spin_elas).transpose(); 
 }
 
 void Grain::solve_Lsig_iteration(Matrix3d &L_dt_tensor, Matrix3d &vel_grad_flag, Matrix3d &stress_incr, Matrix3d &dstress_flag){
@@ -98,7 +99,7 @@ void Grain::solve_Lsig_iteration(Matrix3d &L_dt_tensor, Matrix3d &vel_grad_flag,
         ++ iter_num;
         if(iter_num > 10000) {cout << (unknown_params - x_iter_save).norm() << endl << "Not converged... but still going" << endl; break;}
     } while ((unknown_params - x_iter_save).norm() > 1e-5);
-    if (abs(y_vec.norm()) > 1e-2){
+    if (abs(y_vec.norm()) > 1e-1){
         cout << "End-of-step y_vec, coeff = " << endl;
         cout << y_vec.norm() << "  " << coeff << endl;
     }
@@ -182,6 +183,12 @@ void Grain::print_dislocation(ofstream &os){
 void Grain::print_crss(ofstream &os){
     os << strain_tensor(0,0) << ',' << strain_tensor(1,1) << ','  << strain_tensor(2,2) << ',' << (slip_sys)[0].acc_strain;
     for (Slip &slip_component : slip_sys) os << ',' << slip_component.crss;
+    os << endl;
+}
+
+void Grain::print_accstrain(ofstream &os){
+    os << strain_tensor(0,0) << ',' << strain_tensor(1,1) << ','  << strain_tensor(2,2);
+    for (Slip &slip_component : slip_sys) os << ',' << slip_component.acc_strain;
     os << endl;
 }
 

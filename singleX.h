@@ -23,7 +23,7 @@ typedef Matrix<double, 6, 6> Matrix6d;
 // [global variables]
 extern double timestep, substep, dtime, m, max_strain, temperature;
 extern int flag_harden;
-extern ofstream stress_file, disloc_file, crss_file, stress_step_file, disloc_step_file, disloc_step_file, euler_file, custom_output_file;
+extern ofstream stress_file, disloc_file, crss_file, stress_step_file, disloc_step_file, disloc_step_file, euler_file, custom_output_file, accstrain_file;
 
 // [classes]
 class Grain;
@@ -114,6 +114,7 @@ class Grain{
         void print_stress_strain_screen();
         void print_dislocation(ofstream &os);
         void print_crss(ofstream &os);
+        void print_accstrain(ofstream &os);
         void print_euler(ofstream &os);
         Matrix3d get_vel_grad_plas(Matrix3d stress_incr);
     private:
