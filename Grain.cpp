@@ -40,7 +40,8 @@ void Grain::update_status(Matrix3d L_dt_tensor, Matrix3d vel_grad_flag, Matrix3d
     // update elastic modulus
     elastic_modulus = rotate_6d_stiff_modu(elastic_modulus_ref,orientation);
     solve_Lsig_iteration(L_dt_tensor, vel_grad_flag, stress_incr, dstress_flag);
-    L_dt_tensor(0,1) = 0, L_dt_tensor(1,0) = 0; // fix Omega12 = 0
+    L_dt_tensor(0,1) = (L_dt_tensor(0,1),L_dt_tensor(1,0))/2; 
+    L_dt_tensor(1,0) = L_dt_tensor(0,1); // fix Omega12 = 0
     vel_grad_plas = get_vel_grad_plas(stress_tensor + stress_incr);
     vel_grad_elas = L_dt_tensor - vel_grad_plas;
     // end iteration

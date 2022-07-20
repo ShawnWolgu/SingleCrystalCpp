@@ -104,8 +104,8 @@ vector<double> running_time_grad(double rss, double c_drag, double wave_speed, d
     double vs_by_vel_m = (coeff_B * wave_speed) / (2*(abs(rss) - back_stress)*burgers);
     double dvm_dtau = sign(rss) * 2 * burgers / coeff_B;
     double dvd_dtau = dvm_dtau * pow(vs_by_vel_m,2) * (1 - vs_by_vel_m / sqrt(1+pow(vs_by_vel_m,2)));
-    double velocity = coeff_B * wave_speed/(2*(abs(rss) - back_stress)*burgers);
-    velocity = wave_speed*(sqrt(velocity*velocity+1)-velocity);
+    double velocity = wave_speed*(sqrt(vs_by_vel_m*vs_by_vel_m+1)-vs_by_vel_m);
+    velocity = max(1e-10,velocity);
     vector<double> result = { -barrier_distance / pow(velocity,2) * dvd_dtau, barrier_distance / velocity};
     return result;
 }
