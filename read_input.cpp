@@ -8,9 +8,35 @@ void print_harden_law();
 void add_slips(ifstream &is, vector<Slip> &slips, Matrix3d lattice_vecs);
 Matrix3d load_matrix_input(ifstream &load_file);
 void step_config(string in_str);
+string get_next_line(ifstream &infile);
+bool hasEnding (std::string const &fullString, std::string const &ending);
+
+void set_config(){
+    ifstream config;
+    config.open(configure_path);
+    if(config){
+	cout << "Find configration file in cwd." << endl;
+	string input_line;
+	while (!config.eof()){
+	    getline(config,input_line);
+	    if (input_line[0] == '#'){
+		if((input_line.find("Single") != input_line.npos) || (input_line.find("sx") != input_line.npos)){
+		    sxfile_path = get_next_line(config);
+		}
+		if((input_line.find("Load") != input_line.npos) || (input_line.find("load") != input_line.npos)){
+		    loadfile_path = get_next_line(config);
+		}
+	    }
+	}
+    }
+}
 
 Grain read_grain(){
-    ifstream input_file("SingleX.txt");
+    ifstream input_file(sxfile_path);
+    if (!input_file) {
+	cout << "Cannot find input_file!" << endl;
+	exit(0);
+    }
     string input_line;
     Matrix6d elastic_modulus;
     Matrix3d lattice_vecs, orientation;
@@ -113,10 +139,9 @@ Matrix3d read_euler(ifstream &is){
     stringstream stream(temp_str);
     while(!stream.eof()) stream >> temp[temp_idx++];
     euler_angle << temp[0], temp[1], temp[2];
-    cout << "Euler Angle:" << endl << euler_angle << endl; 
+    cout << "Euler Angle:" << endl << euler_angle.transpose() << endl; 
     orientation = Euler_trans(euler_angle);
     cout << "Read Orientation Matrix (From Euler Angle):" << endl << orientation << endl; 
-    cout << "Euler Angle:" << endl << Euler_trans(orientation) << endl; 
     return orientation;
 }
 
@@ -171,7 +196,11 @@ void add_slips(ifstream &is, vector<Slip> &slips, Matrix3d lattice_vecs){
 
 void read_load(Matrix3d &vel_grad_tensor, Matrix3d &vel_grad_flag, Matrix3d &stress_incr, Matrix3d &dstress_flag){
     cout << "Open Load File." << endl;
-    ifstream load_file("Load.txt",ifstream::in);
+    ifstream load_file(loadfile_path,ifstream::in);
+    if (!load_file) {
+	cout << "Cannot find load_file!" << endl;
+	exit(0);
+    }
     string step_conf_string;
     getline(load_file, step_conf_string);
     // args: 1: timestep, 2: substep, 3: max_strain
@@ -228,5 +257,25 @@ void step_config(string in_str){
         max_strain = temp[2];
     }
     dtime = substep*timestep;
+}
+
+bool hasEnding (std::string const &fullString, std::string const &ending) {
+    if (fullString.length() >= ending.length()) {
+        return (0 == fullString.compare (fullString.length() - ending.length(), ending.length(), ending));
+    } else {
+        return false;
+    }
+}
+
+string get_next_line(ifstream &infile){
+    string input_line;
+    getline(infile,input_line);
+    if(input_line == "" || input_line == "\r" || input_line[0] == '#') return get_next_line(infile);
+    else{
+    	if(hasEnding(input_line,"\r")){
+	    input_line.erase(input_line.size() - 1);
+	}
+	return input_line;
+    }
 }
 

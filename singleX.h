@@ -9,6 +9,7 @@
 #include <Eigen/Eigenvalues>
 #include <time.h> 
 #include <math.h>
+#include <tclap/CmdLine.h>
 using namespace std;
 using Eigen::Matrix3d, Eigen::Vector3d, Eigen::Matrix, Eigen::MatrixXd, Eigen::all;
 typedef Matrix<double, 6, 1> Vector6d;
@@ -21,15 +22,16 @@ typedef Matrix<double, 6, 6> Matrix6d;
 #define MPa_to_Pa 1e6
 
 // [global variables]
-extern double timestep, substep, dtime, m, max_strain, temperature;
+extern double timestep, substep, dtime, m, max_strain, temperature, outputstep;
 extern int flag_harden;
 extern ofstream stress_file, disloc_file, crss_file, stress_step_file, disloc_step_file, disloc_step_file, euler_file, custom_output_file, accstrain_file;
-
+extern string sxfile_path, loadfile_path, configure_path;
 // [classes]
 class Grain;
 class Slip;
 
 // [file read]
+void set_config();
 Grain read_grain();
 void read_load(Matrix3d &vel_grad_tensor, Matrix3d &vel_grad_flag, Matrix3d &stress_incr, Matrix3d &dstress_flag);
 
@@ -41,7 +43,7 @@ void grain_output(Grain &grain);
 void outfile_close();
 
 // [load apply]
-void singleXloading(Grain &grain, Matrix3d vel_grad_tensor, Matrix3d vel_grad_flag, Matrix3d stress_incr, Matrix3d dstress_flag);
+void singleXloading(Grain &grain, Matrix3d vel_grad_tensor, Matrix3d vel_grad_flag, Matrix3d stress_incr, Matrix3d dstress_flag, bool flag_subprint);
 
 // [functions]
 void flag_to_idx(Matrix<double, 15, 1> flag, vector<int> &known_idx, vector<int> &unknown_idx);

@@ -82,8 +82,8 @@ void Grain::solve_Lsig_iteration(Matrix3d &L_dt_tensor, Matrix3d &vel_grad_flag,
         //cout << "y_last = " << endl << y_vec_last.transpose() << endl;
         //cout << "y*y_last = " << endl << y_vec.dot(y_vec_last) << endl;
 
-        //if (y_vec_last != Vector6d::Zero() && y_vec.norm()/y_vec_last.norm() > 1){
-        if (y_vec.dot(y_vec_last) < -1e-20){
+        if (y_vec_last != Vector6d::Zero() && y_vec.norm()/y_vec_last.norm() > 1){
+        //if (y_vec.dot(y_vec_last) < -1e-20){
             coeff = 0.5 * coeff;
             unknown_params = x_iter_save - coeff * x_iter_step;
             continue;
@@ -103,6 +103,10 @@ void Grain::solve_Lsig_iteration(Matrix3d &L_dt_tensor, Matrix3d &vel_grad_flag,
     if (abs(y_vec.norm()) > 1e-1){
         cout << "End-of-step y_vec, coeff = " << endl;
         cout << y_vec.norm() << "  " << coeff << endl;
+    }
+    if (abs(y_vec.norm()) > 10){
+        cout << "Severe disconvergence!! Break!" << endl;
+	exit(0);
     }
 }
 
