@@ -23,14 +23,28 @@ Matrix3d Grain::get_vel_grad_plas(Matrix3d stress_3d){
     return orientation.transpose() * vel_grad_plas * orientation;
 }
 
-Matrix6d Grain::get_dp_grad(Matrix3d stress_3d){
-    Matrix6d dp_grad = Matrix6d::Zero();
+void Grain::calc_slip_ddgamma_dtau(Matrix3d stress_3d){
     Matrix3d stress_grain = orientation * stress_3d * orientation.transpose();
     for (Slip &slip_component : slip_sys) {
         slip_component.cal_ddgamma_dtau(*this, stress_grain);
-        dp_grad += slip_component.ddgamma_dsigma();
     }
-    return rotate_6d_stiff_modu(dp_grad, orientation);
+}
+
+Matrix6d Grain::get_dp_grad(){
+    Matrix6d dp_grad = Matrix6d::Zero();
+    for (Slip &slip_component : slip_sys) {
+        dp_grad += slip_component.ddp_dsigma();
+    }
+    return rotate_6d_stiff_modu(dp_grad, orientation)*strain_modi_tensor;
+}
+
+Matrix<double, 3, 6> Grain::get_wp_grad(){
+    Matrix6d wp_grad = Matrix6d::Zero();
+    for (Slip &slip_component : slip_sys) {
+        wp_grad += slip_component.dwp_dsigma();
+    }
+    Matrix6d return_mat = rotate_6d_stiff_modu(wp_grad, orientation)*strain_modi_tensor;
+    return return_mat(Eigen::seq(3,last),all);
 }
 
 void Grain::update_status(Matrix3d L_dt_tensor, Matrix3d vel_grad_flag, Matrix3d stress_incr, Matrix3d dstress_flag){
@@ -65,41 +79,36 @@ void Grain::solve_Lsig_iteration(Matrix3d &L_dt_tensor, Matrix3d &vel_grad_flag,
     Vector6d unknown_params = params(unknown_idx);
     
     int iter_num = 0;
-    double coeff = 0.5;
+    double coeff = 1/1.2;
     Vector6d x_iter_save = Vector6d::Zero(), x_iter_step = Vector6d::Zero();
     Vector6d y_vec = Vector6d::Zero(), y_vec_last = Vector6d::Zero();
+    Matrix6d dfx_matrix;
+    Vector6d stress_6d = tensor_trans_order(stress_tensor);
+    C_ij_pri = get_C_ij_pri(stress_6d);
+    Sigma_ik = get_Sigma_ik(stress_6d);
+
     do{
         x_iter_save = unknown_params;
-        //Solve stress_incr, L_dt_tensor
-        ddp_by_dsigma = get_dp_grad(stress_tensor+stress_incr);
-        y_vec = calcfx_and_update(unknown_params, known_params, unknown_idx, known_idx, right_vec(stress_incr));
-        
-        
-        //cout << "coeff = " << coeff << endl;
-        //cout << "x = " << endl << x_iter_save.transpose() << endl;
-        //cout << "y = " << endl << y_vec.transpose() << endl;
-        //cout << "y_norm = " << endl << y_vec.norm() << endl;
-        //cout << "y_last = " << endl << y_vec_last.transpose() << endl;
-        //cout << "y*y_last = " << endl << y_vec.dot(y_vec_last) << endl;
-
+        y_vec = calc_fx(L_dt_tensor, stress_incr);
         if (y_vec_last != Vector6d::Zero() && y_vec.norm()/y_vec_last.norm() > 1){
         //if (y_vec.dot(y_vec_last) < -1e-20){
             coeff = 0.5 * coeff;
             unknown_params = x_iter_save - coeff * x_iter_step;
-            continue;
+	    //cout << "Not downward! coeff = " << coeff << endl;
         }
         else{
             coeff = 1.2 * coeff;
-            x_iter_step = unknown_params - x_iter_save;
+	    dfx_matrix = calc_dfx(L_dt_tensor, stress_incr, unknown_idx);
+	    x_iter_step = -dfx_matrix.inverse()*y_vec;
             y_vec_last = y_vec;
             unknown_params = x_iter_save + coeff * x_iter_step;
-            int unk_par_idx = 0;
-            for (auto &unk_idx : unknown_idx) {params(unk_idx) = unknown_params(unk_par_idx); ++unk_par_idx;}
-            params_convert_to_matrix(params, L_dt_tensor, stress_incr);
         }
+        int unk_par_idx = 0;
+        for (auto &unk_idx : unknown_idx) {params(unk_idx) = unknown_params(unk_par_idx); ++unk_par_idx;}
+        params_convert_to_matrix(params, L_dt_tensor, stress_incr);
         ++ iter_num;
         if(iter_num > 10000) {cout << (unknown_params - x_iter_save).norm() << endl << "Not converged... but still going" << endl; break;}
-    } while ((unknown_params - x_iter_save).norm() > 1e-5);
+    } while ((unknown_params - x_iter_save).norm() > 1e-7);
     if (abs(y_vec.norm()) > 1e-1){
         cout << "End-of-step y_vec, coeff = " << endl;
         cout << y_vec.norm() << "  " << coeff << endl;
@@ -110,46 +119,33 @@ void Grain::solve_Lsig_iteration(Matrix3d &L_dt_tensor, Matrix3d &vel_grad_flag,
     }
 }
 
-Vector6d Grain::calcfx_and_update(Vector6d &unknown_params, Matrix<double,9,1> known_params, vector<int> unknown_idx,vector<int> known_idx, Vector6d right_vector){
-    Matrix<double, 6, 15> left_x_mid = left_matrix() * mid_matrix();
-    Matrix6d solveA;
-    Matrix<double,6,9> solveB;
-    solveA << left_x_mid(all,unknown_idx);
-    solveB << left_x_mid(all,known_idx);
-    Vector6d return_vec = solveA * unknown_params + solveB * known_params - right_vector;
-    unknown_params = solveA.inverse() * (-1*solveB*known_params + right_vector);
+Vector6d Grain::calc_fx(Matrix3d &L_dt_tensor, Matrix3d &stress_incr){
+    Matrix<double, 6, 9> left_M;
+    left_M << C_ij_pri*strain_modi_tensor, Sigma_ik;
+    Matrix3d vel_grad_elas = L_dt_tensor - get_vel_grad_plas(stress_tensor + stress_incr);
+    Vector6d return_vec = left_M * L_compo_to_wd() * tensor_trans_order_9(vel_grad_elas) - tensor_trans_order(stress_incr);
     return return_vec;
 }
 
-Matrix<double, 6, 15> Grain::left_matrix(){
-    Vector6d stress_6d = tensor_trans_order(stress_tensor);
-    Matrix6d C_ij_pri = get_C_ij_pri(stress_6d);
-    Sigma_ik = get_Sigma_ik(stress_6d);
-
-    Matrix6d minus_delta_il = -Matrix6d::Identity(); 
-    CNPN = elastic_modulus * strain_modi_tensor * ddp_by_dsigma * strain_modi_tensor;
-
-    Matrix<double, 6, 15> left_M;
-    left_M << C_ij_pri, Sigma_ik, minus_delta_il-CNPN;
-    return left_M;
+Matrix6d Grain::calc_dfx(Matrix3d &L_dt_tensor, Matrix3d &stress_incr,vector<int> unknown_idx){
+    calc_slip_ddgamma_dtau(stress_tensor+stress_incr);
+    dwp_by_dsigma = get_wp_grad();
+    ddp_by_dsigma = get_dp_grad();
+    Matrix6d dfx_ddsigma = -Matrix6d::Identity() - elastic_modulus*strain_modi_tensor*ddp_by_dsigma - Sigma_ik*dwp_by_dsigma;
+    Matrix<double, 6, 15> dfx_dX;
+    Matrix<double,15,15> trans_compo;
+    dfx_dX << C_ij_pri*strain_modi_tensor, Sigma_ik, dfx_ddsigma;
+    trans_compo << L_compo_to_wd(), Matrix<double,9,6>::Zero(), Matrix<double,6,9>::Zero(), Matrix6d::Identity();
+    dfx_dX = dfx_dX * trans_compo;
+    return dfx_dX(all, unknown_idx);
 }
 
-Matrix<double, 15, 15> Grain::mid_matrix(){
-    Matrix<double, 15, 15> mid_M;
-    mid_M << Matrix3d::Identity(), Matrix3d::Zero(), Matrix3d::Zero(), Matrix<double,3,6>::Zero(),
-             Matrix3d::Zero(), Matrix3d::Identity(), Matrix3d::Identity(), Matrix<double,3,6>::Zero(),
-             Matrix3d::Zero(), 0.5*Matrix3d::Identity(), -0.5*Matrix3d::Identity(), Matrix<double,3,6>::Zero(),
-             Matrix<double,6,3>::Zero(), Matrix<double,6,6>::Zero(), Matrix6d::Identity(); 
+Matrix<double, 9, 9> Grain::L_compo_to_wd(){
+    Matrix<double, 9, 9> mid_M;
+    mid_M << Matrix3d::Identity(), Matrix3d::Zero(), Matrix3d::Zero(),
+             Matrix3d::Zero(), 0.5*Matrix3d::Identity(), 0.5*Matrix3d::Identity(),
+             Matrix3d::Zero(), 0.5*Matrix3d::Identity(), -0.5*Matrix3d::Identity();
     return mid_M;
-}
-
-Vector6d Grain::right_vec(Matrix3d &stress_incr){
-    vector<int> slice = {3,4,5};
-    Matrix3d dplusw = get_vel_grad_plas(stress_tensor+stress_incr);
-    Vector6d dpn = tensor_trans_order((Matrix3d)(0.5*dplusw + 0.5*dplusw.transpose()));
-    Vector3d dwn = tensor_trans_order((Matrix3d)(0.5*dplusw - 0.5*dplusw.transpose()))(slice);
-    Vector6d result = elastic_modulus * strain_modi_tensor * dpn - CNPN * tensor_trans_order(stress_incr) + Sigma_ik * dwn;
-    return result;
 }
 
 Matrix6d Grain::get_C_ij_pri(Vector6d &stress_6d){

@@ -11,7 +11,7 @@
 #include <math.h>
 #include <tclap/CmdLine.h>
 using namespace std;
-using Eigen::Matrix3d, Eigen::Vector3d, Eigen::Matrix, Eigen::MatrixXd, Eigen::all;
+using Eigen::Matrix3d, Eigen::Vector3d, Eigen::Matrix, Eigen::MatrixXd, Eigen::all, Eigen::last;
 typedef Matrix<double, 6, 1> Vector6d;
 typedef Matrix<double, 6, 6> Matrix6d;
 
@@ -79,7 +79,8 @@ class Slip {
         Matrix3d dL_tensor();
         Matrix3d dstrain_tensor();
         Matrix3d drotate_tensor();
-        Matrix6d ddgamma_dsigma();
+        Matrix6d ddp_dsigma();
+        Matrix6d dwp_dsigma();
         void cal_strain(Grain &grain, Matrix3d stress_tensor);
         void cal_ddgamma_dtau(Grain &grain, Matrix3d stress_tensor);
         void update_status(Grain &grain);
@@ -104,9 +105,6 @@ class Grain{
     public:
         Matrix3d lattice_vec, deform_grad, deform_grad_elas, deform_grad_plas, stress_tensor, strain_tensor, orientation;
         Matrix6d elastic_modulus, elastic_modulus_ref;
-        Matrix<double, 6, 6> ddp_by_dsigma;
-        Matrix<double, 6, 3> Sigma_ik;
-        Matrix6d strain_modi_tensor;
         vector<Slip> slip_sys;
         double strain_rate = 1e-3;
         Grain();
@@ -120,16 +118,19 @@ class Grain{
         void print_euler(ofstream &os);
         Matrix3d get_vel_grad_plas(Matrix3d stress_incr);
     private:
-        Matrix6d CNPN;
-        Matrix<double, 6, 15> left_matrix();
-        Matrix<double, 15, 15> mid_matrix();
-        Vector6d right_vec(Matrix3d &stress_incr);
-        Matrix6d get_C_ij_pri(Vector6d &stress_6d);
-        Matrix6d get_dp_grad(Matrix3d stress_incr);
-        Matrix<double, 6, 3> get_Sigma_ik(Vector6d &stress_6d);
-        void solve_Lsig_iteration(Matrix3d &L_dt_tensor, Matrix3d &vel_grad_flag, Matrix3d &stress_incr, Matrix3d &dstress_flag);
         Vector6d solve_L_dsigma(Matrix3d &vel_grad_elas, Matrix3d &vel_grad_flag, Matrix3d &stress_incr, Matrix3d &dstress_flag);
-        Vector6d calcfx_and_update(Vector6d &unknown_params, Matrix<double,9,1> known_params, vector<int> unknown_idx, vector<int> known_idx, Vector6d right_vector);
+        Vector6d calc_fx(Matrix3d &L_dt_tensor, Matrix3d &stress_incr);
+        Matrix<double, 3, 6> dwp_by_dsigma;
+        Matrix<double, 6, 3> Sigma_ik;
+        Matrix<double, 9, 9> L_compo_to_wd();
+        Matrix6d ddp_by_dsigma, C_ij_pri, strain_modi_tensor;
+        Matrix6d get_C_ij_pri(Vector6d &stress_6d);
+        Matrix6d get_dp_grad();
+        Matrix6d calc_dfx(Matrix3d &L_dt_tensor, Matrix3d &stress_incr,vector<int> unknown_idx);
+        Matrix<double, 3, 6> get_wp_grad();
+        Matrix<double, 6, 3> get_Sigma_ik(Vector6d &stress_6d);
+	void calc_slip_ddgamma_dtau(Matrix3d stress_3d);
+        void solve_Lsig_iteration(Matrix3d &L_dt_tensor, Matrix3d &vel_grad_flag, Matrix3d &stress_incr, Matrix3d &dstress_flag);
 };
 
 #endif

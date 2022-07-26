@@ -64,15 +64,13 @@ void flag_to_idx(Matrix<double, 15, 1> flag, vector<int> &known_idx, vector<int>
     if (unknown_cur != 6 || known_cur != 9) throw "ERROR: wrong number of unknown parameters in L or dsigma!";
 }
 
-Matrix6d rotate_6d_stiff_modu(Matrix6d modulus, Matrix3d rotate_matrix)
-{
+Matrix6d rotate_6d_stiff_modu(Matrix6d modulus, Matrix3d rotate_matrix){
     Matrix6d M66 = cal_rotation_trans_6d_for_stiff(rotate_matrix);
     return M66*modulus*M66.transpose();
 }
 
-Matrix6d cal_rotation_trans_6d_for_stiff(Matrix3d M)
-{
-	Matrix6d M66;
+Matrix6d cal_rotation_trans_6d_for_stiff(Matrix3d M){
+   Matrix6d M66;
     double xx,yy,zz,yz,xz,xy,yx,zx,zy;
     xx = M(0,0); 
     yy = M(1,1);
@@ -133,8 +131,7 @@ Matrix6d rotate_6d_compl_modu(Matrix6d modulus, Matrix3d rotate_matrix)
     return M66*modulus*M66.transpose();
 }
 
-Matrix6d cal_rotation_trans_6d_for_compl(Matrix3d M)
-{
+Matrix6d cal_rotation_trans_6d_for_compl(Matrix3d M){
 	Matrix6d M66;
     double xx,yy,zz,yz,xz,xy,yx,zx,zy;
     xx = M(0,0); 

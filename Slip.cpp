@@ -49,9 +49,16 @@ Matrix3d Slip::dstrain_tensor() {return 0.5 * (schmidt + schmidt.transpose()) * 
 
 Matrix3d Slip::drotate_tensor() {return 0.5 * (schmidt - schmidt.transpose()) * strain_rate_slip * dtime;}
 
-Matrix6d Slip::ddgamma_dsigma() {
+Matrix6d Slip::ddp_dsigma() {
     Vector6d symSchmidt_6d = tensor_trans_order((Matrix3d)(0.5*(schmidt+schmidt.transpose())));
     Matrix6d symSchmidt_66 = symSchmidt_6d * symSchmidt_6d.transpose();
+    return symSchmidt_66 * ddgamma_dtau * dtime;
+}
+
+Matrix6d Slip::dwp_dsigma() {
+    Vector6d symSchmidt_6d = tensor_trans_order((Matrix3d)(0.5*(schmidt+schmidt.transpose())));
+    Vector6d asymSchmidt_6d = tensor_trans_order((Matrix3d)(0.5*(schmidt-schmidt.transpose())));
+    Matrix6d symSchmidt_66 = asymSchmidt_6d * symSchmidt_6d.transpose();
     return symSchmidt_66 * ddgamma_dtau * dtime;
 }
 
@@ -122,6 +129,9 @@ void Slip::update_status(Grain &grain){
      * 0 : Voce Hardening; 1 : Dislocation Density Hardening; 2 : Dislocation Velocity Model;
      */
     Matrix3d def_grad_elas = grain.orientation * grain.deform_grad_elas * grain.orientation.transpose();
+    Matrix3d sym_deform = 0.5 * (def_grad_elas + def_grad_elas.transpose());
+    Vector3d burgers_def = sym_deform * burgers_vec, plane_norm_def = (plane_norm.transpose()*sym_deform.inverse()).transpose();
+    schmidt = burgers_def/burgers_def.norm() * plane_norm_def.transpose()/plane_norm_def.norm();
     switch (flag_harden)
     {
     case 0:
@@ -235,7 +245,7 @@ void Slip::cal_ddgamma_dtau(Grain &grain, Matrix3d stress_tensor){
 void Slip::cal_ddgamma_dtau_pow(Matrix3d stress_tensor, Matrix3d deform_grad_elas){
     double rss_slip = cal_rss(stress_tensor, deform_grad_elas);       
     if(abs(rss_slip) > 0.5 * crss){
-        ddgamma_dtau = ref_strain_rate * pow(abs(rss_slip / crss), 1/rate_sen-1) * sign(rss_slip) / rate_sen; 
+        ddgamma_dtau = ref_strain_rate * pow(abs(rss_slip / crss), 1/rate_sen-1) * sign(rss_slip) / rate_sen / crss * sign(rss_slip); 
         strain_rate_slip = ref_strain_rate * pow(abs(rss_slip / crss), 1/rate_sen) * sign(rss_slip); 
     }
 }   
@@ -243,7 +253,7 @@ void Slip::cal_ddgamma_dtau_pow(Matrix3d stress_tensor, Matrix3d deform_grad_ela
 void Slip::cal_ddgamma_dtau_ddhard(Matrix3d stress_tensor, Matrix3d deform_grad_elas, double strain_rate){
     double rss_slip = cal_rss(stress_tensor, deform_grad_elas);  
     if(abs(rss_slip) > 0.5 * crss){
-        ddgamma_dtau = ref_strain_rate * pow(abs(rss_slip / crss), 1/rate_sen-1) * sign(rss_slip) / rate_sen; 
+        ddgamma_dtau = ref_strain_rate * pow(abs(rss_slip / crss), 1/rate_sen-1) * sign(rss_slip) / rate_sen / crss * sign(rss_slip); 
         strain_rate_slip = ref_strain_rate * pow(abs(rss_slip / crss), 1/rate_sen) * sign(rss_slip); 
     }
 }   

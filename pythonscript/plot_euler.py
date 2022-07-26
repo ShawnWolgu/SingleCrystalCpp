@@ -30,7 +30,7 @@ def calc_ipf(axis_vec):
     return axis_ipf
 
 def ipf_curve_points():
-    axis = np.hstack((np.ones((30,1)),np.arange(0,1.0001,1/30)[:30].reshape(30,1),np.ones((30,1))))
+    axis = np.hstack((np.ones((31,1)),np.arange(0,1.001+1/30,1/30)[:31].reshape(31,1),np.ones((31,1))))
     pts = []
     for iaxis in axis:
         pts.append(trans_to_xy(calc_ipf(iaxis)))
