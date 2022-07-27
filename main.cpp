@@ -38,7 +38,8 @@ int main(int argc, char **argv)
 	timestep = stepArg.getValue();
 	substep = substepArg.getValue();
 	outputstep = outputArg.getValue();
-	max_strain = endArg.getValue(); 
+	max_strain = endArg.getValue();
+	dtime = timestep*substep;
 	bool flag_subprint = subprintSwitch.getValue();
 
 	if ( flag_subprint )

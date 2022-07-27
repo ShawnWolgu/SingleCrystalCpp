@@ -63,8 +63,8 @@ Matrix6d Slip::dwp_dsigma() {
 }
 
 double Slip::cal_rss(Matrix3d stress_tensor, Matrix3d deform_grad_elas){
-    Matrix3d sym_deform = Matrix3d::Identity(); 
-    return (sym_deform * (burgers_vec / burgers_vec.norm())).transpose() * stress_tensor * (plane_norm.transpose() * sym_deform.inverse()).transpose(); 
+    Matrix3d sym_deform = deform_grad_elas.transpose() * deform_grad_elas; 
+    return (burgers_vec / burgers_vec.norm()).transpose() * sym_deform * stress_tensor * plane_norm; 
 }
 
 void Slip::cal_shear_modulus(Matrix6d elastic_modulus){

@@ -47,7 +47,7 @@ void singleXloading(Grain &grain, Matrix3d vel_grad_tensor, Matrix3d vel_grad_fl
 
 // [functions]
 void flag_to_idx(Matrix<double, 15, 1> flag, vector<int> &known_idx, vector<int> &unknown_idx);
-void params_convert_to_matrix(Matrix<double, 15, 1> &params, Matrix3d &vel_grad_elas, Matrix3d &stress_incr);
+void params_convert_to_matrix(Matrix<double, 15, 1> &params, Vector6d &unknown_params, vector<int> &unknown_idx, Matrix3d &vel_grad_elas, Matrix3d &stress_incr);
 void stress_incr_modify(Matrix3d stress_tensor, Matrix3d &stress_incr, Matrix3d stress_iter_save);
 int sign(double x);
 Vector3d Euler_trans(Matrix3d euler_matrix);
