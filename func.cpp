@@ -31,7 +31,12 @@ Matrix3d tensor_trans_order_9(Matrix<double,9,1> tensor){
     return Matrix3d{{tensor(0), tensor(5), tensor(4)}, {tensor(8), tensor(1), tensor(3)}, {tensor(7), tensor(6), tensor(2)}};
 }
 
-void params_convert_to_matrix(Matrix<double, 15, 1> &params, Matrix3d &vel_grad_elas, Matrix3d &stress_incr){
+void params_convert_to_matrix(Matrix<double, 15, 1> &params, Vector6d &unknown_params, vector<int> &unknown_idx, Matrix3d &vel_grad_elas, Matrix3d &stress_incr){
+    int unk_par_idx = 0;
+    for (auto &unk_idx : unknown_idx) {
+	params(unk_idx) = unknown_params(unk_par_idx);
+	++unk_par_idx;
+    }
     Matrix<double,9,1> temp_vel_grad_elas = params(Eigen::seq(0,8));
     Vector6d temp_stress_incr = params(Eigen::seq(9,14));
     vel_grad_elas = tensor_trans_order_9(temp_vel_grad_elas);

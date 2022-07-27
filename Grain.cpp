@@ -76,46 +76,42 @@ void Grain::solve_Lsig_iteration(Matrix3d &L_dt_tensor, Matrix3d &vel_grad_flag,
     vector<int> unknown_idx(6,0), known_idx(9,0);
     flag_to_idx(flags, known_idx, unknown_idx);
     Matrix<double,9,1> known_params = params(known_idx);
-    Vector6d unknown_params = params(unknown_idx);
-    
-    int iter_num = 0;
-    double coeff = 1/1.2;
-    Vector6d x_iter_save = Vector6d::Zero(), x_iter_step = Vector6d::Zero();
-    Vector6d y_vec = Vector6d::Zero(), y_vec_last = Vector6d::Zero();
-    Matrix6d dfx_matrix;
-    Vector6d stress_6d = tensor_trans_order(stress_tensor);
+    Vector6d unknown_params = params(unknown_idx), stress_6d = tensor_trans_order(stress_tensor), y_vec = Vector6d::Zero();
     C_ij_pri = get_C_ij_pri(stress_6d);
     Sigma_ik = get_Sigma_ik(stress_6d);
+    double coeff = 1/1.2;
 
     do{
-        x_iter_save = unknown_params;
-        y_vec = calc_fx(L_dt_tensor, stress_incr);
-        if (y_vec_last != Vector6d::Zero() && y_vec.norm()/y_vec_last.norm() > 1){
-        //if (y_vec.dot(y_vec_last) < -1e-20){
-            coeff = 0.5 * coeff;
-            unknown_params = x_iter_save - coeff * x_iter_step;
-	    //cout << "Not downward! coeff = " << coeff << endl;
+	coeff = 1/1.2;	y_vec = Vector6d::Zero();
+   	Vector6d x_iter_save = Vector6d::Zero(), x_iter_step = Vector6d::Zero(), y_vec_last = Vector6d::Zero();
+   	Matrix6d dfx_matrix;
+        do{
+            x_iter_save = unknown_params;
+            y_vec = calc_fx(L_dt_tensor, stress_incr);
+            if (y_vec_last != Vector6d::Zero() && y_vec.norm()/y_vec_last.norm() > 1){
+                coeff = 0.5 * coeff;
+                unknown_params = x_iter_save - coeff * x_iter_step;
+            }
+            else{
+                coeff = 1.2 * coeff;
+    		dfx_matrix = calc_dfx(L_dt_tensor, stress_incr, unknown_idx);
+    	    	x_iter_step = -dfx_matrix.inverse()*y_vec;
+                y_vec_last = y_vec;
+                unknown_params = x_iter_save + coeff * x_iter_step;
+            }
+	    params_convert_to_matrix(params, unknown_params, unknown_idx, L_dt_tensor, stress_incr);
+        } while ((unknown_params - x_iter_save).norm() > 1e-7);
+        if (abs(y_vec.norm()) > 1){
+    	    if (dtime < 1e-20) {cout << "Severe disconvergence!! break!" << endl; exit(0);}
+    	    else{
+    	        //cout << "Severe disconvergence!! Will retry in a smaller step." << endl;
+    	        dtime = dtime /2;
+    	    }
         }
-        else{
-            coeff = 1.2 * coeff;
-	    dfx_matrix = calc_dfx(L_dt_tensor, stress_incr, unknown_idx);
-	    x_iter_step = -dfx_matrix.inverse()*y_vec;
-            y_vec_last = y_vec;
-            unknown_params = x_iter_save + coeff * x_iter_step;
-        }
-        int unk_par_idx = 0;
-        for (auto &unk_idx : unknown_idx) {params(unk_idx) = unknown_params(unk_par_idx); ++unk_par_idx;}
-        params_convert_to_matrix(params, L_dt_tensor, stress_incr);
-        ++ iter_num;
-        if(iter_num > 10000) {cout << (unknown_params - x_iter_save).norm() << endl << "Not converged... but still going" << endl; break;}
-    } while ((unknown_params - x_iter_save).norm() > 1e-7);
+    } while(abs(y_vec.norm()) > 1);
     if (abs(y_vec.norm()) > 1e-1){
-        cout << "End-of-step y_vec, coeff = " << endl;
+	cout << "End-of-step y_vec, coeff = " << endl;
         cout << y_vec.norm() << "  " << coeff << endl;
-    }
-    if (abs(y_vec.norm()) > 10){
-        cout << "Severe disconvergence!! Break!" << endl;
-	exit(0);
     }
 }
 
