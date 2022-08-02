@@ -266,14 +266,10 @@ int sign(double x){
     return (0 < x) - (x < 0);
 }
 
-void stress_incr_modify(Matrix3d stress_tensor, Matrix3d &stress_incr, Matrix3d stress_iter_save){
-    Vector6d incr_6d = tensor_trans_order(stress_incr), stress_6d = tensor_trans_order(stress_tensor), incr_0_6d = tensor_trans_order(stress_iter_save);
-    Vector6d direction = incr_6d - incr_0_6d;
-    double step = direction.norm();
-    direction = direction / step;
-    double ratio = incr_6d.dot(-stress_6d / stress_6d.norm())/stress_6d.norm();
-    if(ratio > 0.1){
-        incr_6d = step*0.1/ratio * direction + incr_0_6d;
-        stress_incr = tensor_trans_order(incr_6d);
-    }
+Matrix3d vel_bc_to_vel_grad(Matrix3d vel_bc_tensor){
+    Matrix<double,9,1> d_w_vector = bc_modi_matrix * tensor_trans_order_9(vel_bc_tensor);
+    Matrix3d d_tensor = tensor_trans_order((Vector6d)d_w_vector(Eigen::seq(0,5)));
+    Matrix3d w_tensor;
+    w_tensor << 0,d_w_vector(8),d_w_vector(7),-d_w_vector(8),0,d_w_vector(6),-d_w_vector(7),-d_w_vector(6),0;
+    return d_tensor + w_tensor;
 }

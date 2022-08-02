@@ -15,6 +15,7 @@ int main(int argc, char **argv)
     outfile_initialization(testgrain);
 
     //[Load Setting]
+    bc_modi_matrix << Matrix3d::Identity(), Matrix3d::Zero(), Matrix3d::Zero(),Matrix3d::Zero(), 0.5*Matrix3d::Identity(), 0.5*Matrix3d::Identity(),Matrix3d::Zero(), 0.5*Matrix3d::Identity(), -0.5*Matrix3d::Identity();
     Matrix3d vel_grad_tensor, vel_grad_flag, stress_incr, dstress_flag;
     cout << "##### Create Output Files #####" << endl;
     read_load(vel_grad_tensor, vel_grad_flag, stress_incr, dstress_flag);

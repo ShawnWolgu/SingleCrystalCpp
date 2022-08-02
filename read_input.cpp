@@ -6,7 +6,9 @@ Matrix3d read_orientation(ifstream &is);
 Matrix3d read_euler(ifstream &is);
 void print_harden_law();
 void add_slips(ifstream &is, vector<Slip> &slips, Matrix3d lattice_vecs);
+Matrix3d vel_grad_flag_config(ifstream &load_file, Matrix3d &vel_grad_tensor);
 Matrix3d load_matrix_input(ifstream &load_file);
+void vel_grad_modify(char &flag_1, char &flag_2, int compoidx, Matrix3d &vel_grad_tensor);
 void step_config(string in_str);
 string get_next_line(ifstream &infile);
 bool hasEnding (std::string const &fullString, std::string const &ending);
@@ -207,11 +209,123 @@ void read_load(Matrix3d &vel_grad_tensor, Matrix3d &vel_grad_flag, Matrix3d &str
     step_config(step_conf_string);
     cout << "Step configured." << endl;
     vel_grad_tensor = load_matrix_input(load_file);
-    vel_grad_flag = load_matrix_input(load_file);
+    vel_grad_flag = vel_grad_flag_config(load_file,vel_grad_tensor);
     stress_incr = load_matrix_input(load_file);
     dstress_flag = load_matrix_input(load_file);
+    if (vel_grad_flag.sum() + dstress_flag.sum() < 9) {throw "Cannot solve BC!";}
     cout << "Boundary conditions configured." << endl;
+    cout << bc_modi_matrix << endl;
     load_file.close();
+}
+
+Matrix3d vel_grad_flag_config(ifstream &load_file, Matrix3d &vel_grad_tensor){
+    if(load_file.eof()){
+        throw "ERROR in load file!";
+    }
+    string matrix_str;
+    Matrix3d temp_matrix = Matrix3d::Zero();
+    char temp[9];
+    char *temp_ar = temp;
+    int line_count = 0;
+    while(!load_file.eof() && line_count != 3){  
+        getline(load_file,matrix_str);
+        if(matrix_str == "" || matrix_str == "\r")  continue;
+        stringstream stream(matrix_str);
+        int temp_idx = 0;      
+        for(; !stream.eof() && temp_idx != 3; temp_idx++) stream >> *(temp_ar++);
+        if (temp_idx !=3) throw "ERROR in load file!";
+        line_count++;
+    }
+    if (line_count != 3) throw "ERROR in load file!";
+    if (temp[0] == 'w' || temp[4] == 'w' || temp[8] == 'w') throw "ERROR! w should not locate at the diagonal components!";
+    vel_grad_modify(temp[5],temp[7], 3, vel_grad_tensor); 
+    vel_grad_modify(temp[2],temp[6], 4, vel_grad_tensor);
+    vel_grad_modify(temp[1],temp[3], 5, vel_grad_tensor);
+
+    int temp_idx = 0;
+    for (int i = 0;i!=3;++i){
+	for (int j = 0;j != 3;++j){
+	    unsigned char temp_n = temp[temp_idx++];
+	    temp_matrix(i,j) = (float)(temp_n-'0');
+	}
+    }
+    cout << vel_grad_tensor << endl;
+    cout << temp_matrix << endl;
+    return temp_matrix;
+}
+
+void vel_grad_modify(char &flag_1, char &flag_2, int compoidx, Matrix3d &vel_grad_tensor){
+    // cases: 1, d, w
+    int idx1 = 0, idx2 = 0;
+    switch(compoidx){
+	case 3: { idx1 = 1, idx2 = 2; break;}
+	case 4: { idx1 = 0, idx2 = 2; break;}
+	case 5: { idx1 = 0, idx2 = 1; break;}
+    }
+    if(flag_1 != flag_2 && (flag_1 != '0' && flag_2 != '0')){
+	switch(flag_1){
+	    case '1' :{switch(flag_2){
+			case 'd': {vel_grad_tensor(idx2,idx1) = vel_grad_tensor(idx2,idx1) * 2 - vel_grad_tensor(idx1,idx2);break;}
+			case 'w': {vel_grad_tensor(idx2,idx1) = vel_grad_tensor(idx1,idx2) - vel_grad_tensor(idx1,idx2) * 2;break;}
+		      } break;}
+	    case 'd' :{switch(flag_2){	
+			case '1': {vel_grad_tensor(idx1,idx2) = vel_grad_tensor(idx1,idx2) * 2 - vel_grad_tensor(idx2,idx1);break;}
+			case 'w': {float d = vel_grad_tensor(idx1,idx2), w = -vel_grad_tensor(idx2,idx1);
+				vel_grad_tensor(idx1,idx2) = d + w; vel_grad_tensor(idx2,idx1) = d - w; break;}
+		      } break;}
+	    case 'w' :{switch(flag_2){	
+			case '1': {vel_grad_tensor(idx1,idx2) = vel_grad_tensor(idx2,idx1) + 2 * vel_grad_tensor(idx1,idx2);break;}
+			case 'd': {float d = vel_grad_tensor(idx2,idx1), w = vel_grad_tensor(idx1,idx2);
+				vel_grad_tensor(idx1,idx2) = d + w; vel_grad_tensor(idx2,idx1) = d - w; break;}
+		      } break;}
+	}
+	flag_1 = '1', flag_2 = '1'; 
+    }
+    Matrix<double,1,9> row_zero = Matrix<double,1,9>::Zero();
+    if(flag_1 == flag_2){
+	switch(flag_1){
+	    case 'd' :{
+		row_zero(0,compoidx) = 1; bc_modi_matrix.row(compoidx) = row_zero;
+		row_zero(0,compoidx+3) = -1; bc_modi_matrix.row(compoidx+3) = row_zero; 
+		flag_1 = '1', flag_2 = '0';
+		} 
+	    case 'w' :{
+		row_zero(0,compoidx) = 1; bc_modi_matrix.row(compoidx+3) = row_zero;
+		row_zero(0,compoidx+3) = 1; bc_modi_matrix.row(compoidx) = row_zero; 
+		flag_1 = '1', flag_2 = '0';} 
+	}}
+    else{
+	if(flag_1 == '0'){
+	    Matrix<double,1,9> row_zero = Matrix<double,1,9>::Zero();
+	    switch(flag_2){
+		case 'd': {
+		    row_zero(0,compoidx+3) = 1; bc_modi_matrix.row(compoidx) = row_zero;
+		    row_zero(0,compoidx) = -1; bc_modi_matrix.row(compoidx+3) = -1 * row_zero;
+		    break;} 
+		case 'w': {
+		    row_zero(0,compoidx+3) = -1; bc_modi_matrix.row(compoidx+3) = row_zero;
+		    row_zero(0,compoidx) = -1; bc_modi_matrix.row(compoidx) = -1 * row_zero;
+		    break;} 
+		case '1': break;
+	    }
+	    flag_2 = '1';
+	}
+	else{
+	    Matrix<double,1,9> row_zero = Matrix<double,1,9>::Zero();
+	    switch(flag_1){
+	    	case 'd' :{
+		    row_zero(0,compoidx) = 1; bc_modi_matrix.row(compoidx) = row_zero;
+		    row_zero(0,compoidx+3) = -1; bc_modi_matrix.row(compoidx+3) = row_zero; break;
+		} 
+		case 'w' :{
+		    row_zero(0,compoidx) = 1; bc_modi_matrix.row(compoidx+3) = row_zero;
+		    row_zero(0,compoidx+3) = 1; bc_modi_matrix.row(compoidx) = row_zero; break; 
+		} 
+		case '1': break;
+	    }
+	    flag_1 = '1';
+	}
+    }
 }
 
 Matrix3d load_matrix_input(ifstream &load_file){

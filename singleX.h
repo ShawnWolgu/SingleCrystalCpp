@@ -26,6 +26,7 @@ extern double timestep, substep, dtime, m, max_strain, temperature, outputstep;
 extern int flag_harden;
 extern ofstream stress_file, disloc_file, crss_file, stress_step_file, disloc_step_file, disloc_step_file, euler_file, custom_output_file, accstrain_file;
 extern string sxfile_path, loadfile_path, configure_path;
+extern Matrix<double,9,9> bc_modi_matrix;
 // [classes]
 class Grain;
 class Slip;
@@ -48,7 +49,6 @@ void singleXloading(Grain &grain, Matrix3d vel_grad_tensor, Matrix3d vel_grad_fl
 // [functions]
 void flag_to_idx(Matrix<double, 15, 1> flag, vector<int> &known_idx, vector<int> &unknown_idx);
 void params_convert_to_matrix(Matrix<double, 15, 1> &params, Vector6d &unknown_params, vector<int> &unknown_idx, Matrix3d &vel_grad_elas, Matrix3d &stress_incr);
-void stress_incr_modify(Matrix3d stress_tensor, Matrix3d &stress_incr, Matrix3d stress_iter_save);
 int sign(double x);
 Vector3d Euler_trans(Matrix3d euler_matrix);
 Vector6d tensor_trans_order(Matrix3d tensor);
@@ -58,6 +58,7 @@ Matrix3d tensor_trans_order_9(Matrix<double,9,1> tensor);
 Matrix3d calc_stress(Matrix3d strain_elastic, Matrix6d elastic_modulus);
 Matrix3d Euler_trans(Vector3d euler_vector);
 Matrix3d Rodrigues(Matrix3d spin_elas);
+Matrix3d vel_bc_to_vel_grad(Matrix3d vel_bc_tensor);
 Matrix6d rotate_6d_stiff_modu(Matrix6d modulus, Matrix3d rotate_matrix);
 Matrix6d rotate_6d_compl_modu(Matrix6d modulus, Matrix3d rotate_matrix);
 Matrix<double,9,1> tensor_trans_order_9(Matrix3d tensor);
