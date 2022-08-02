@@ -59,6 +59,7 @@ void Grain::update_status(Matrix3d vel_bc_tensor, Matrix3d vel_grad_flag, Matrix
     // end iteration
     stress_tensor = stress_tensor + stress_incr;
     strain_tensor = strain_tensor + 0.5 * (vel_grad_elas + vel_grad_plas + vel_grad_elas.transpose() + vel_grad_plas.transpose());
+    deform_grad = (vel_grad_elas+vel_grad_plas+Matrix3d::Identity()) * deform_grad;
     deform_grad_elas = (vel_grad_elas + Matrix3d::Identity()) * deform_grad_elas;
     deform_grad_plas = deform_grad_elas.inverse() * deform_grad;
     for (Slip &slip_component : slip_sys) slip_component.update_status(*this);
@@ -166,6 +167,9 @@ void Grain::print_stress_strain_screen(){
     cout << strain_tensor(0,0) << '\t' << strain_tensor(1,1) << '\t'  << strain_tensor(2,2) << '\t' << strain_tensor(0,1) << '\t' 
        << strain_tensor(0,2) << '\t' << strain_tensor(1,2) << '\t'  << stress_tensor(0,0) << '\t' << stress_tensor(1,1) << '\t' 
        << stress_tensor(2,2) << '\t' << stress_tensor(0,1) << '\t'  << stress_tensor(0,2) << '\t' << stress_tensor(1,2) << '\t'  << endl;
+    cout << deform_grad(0,0) << '\t' << deform_grad(0,1) << '\t' << deform_grad(0,2) << '\t' << deform_grad(1,0) << '\t'
+	 << deform_grad(1,1) << '\t' << deform_grad(1,2) << '\t' << deform_grad(2,0) << '\t' << deform_grad(2,1) << '\t' 
+	 << deform_grad(2,2) << endl;
 }
 
 void Grain::print_dislocation(ofstream &os){
