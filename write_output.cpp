@@ -78,11 +78,25 @@ void title_output(ofstream &outf, string leads, string subs, int length){
 
 // custom output settings:
 void custom_output_initialization(){
-    custom_output_file << "e11,e22,e33,v1,v2,v3,v4,v5,v6,v7,v8,v9,v10,v11,v12" << endl;
+    custom_output_file << "e11,e22,e33,teff1,teff2,teff3,teff4,teff5,teff6,teff7,teff8,teff9,teff10,teff11,teff12" << endl;
 }
 
 void print_custom(Grain &grain){
     custom_output_file << grain.strain_tensor(0,0) << ',' << grain.strain_tensor(1,1) << ',' << grain.strain_tensor(2,2) << ',';
-    for (Slip &slip_component : grain.slip_sys) custom_output_file << ',' << slip_component.disl_vel;
+    Matrix3d stress_t = grain.orientation * grain.stress_tensor * grain.orientation.transpose();
+    Matrix3d elastic_f = grain.orientation * grain.deform_grad_elas * grain.orientation.transpose();
+    for (Slip &slip_component : grain.slip_sys){
+	custom_output_file << ',' << slip_component.cal_rss(stress_t,elastic_f) - slip_component.update_params[3];
+    }
     custom_output_file << endl;
 }
+// code for printing dislocation velocity
+//void custom_output_initialization(){
+//    custom_output_file << "e11,e22,e33,v1,v2,v3,v4,v5,v6,v7,v8,v9,v10,v11,v12" << endl;
+//}
+//
+//void print_custom(Grain &grain){
+//    custom_output_file << grain.strain_tensor(0,0) << ',' << grain.strain_tensor(1,1) << ',' << grain.strain_tensor(2,2) << ',';
+//    for (Slip &slip_component : grain.slip_sys) custom_output_file << ',' << slip_component.disl_vel;
+//    custom_output_file << endl;
+//}

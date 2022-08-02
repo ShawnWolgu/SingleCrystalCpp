@@ -77,6 +77,7 @@ class Slip {
         const double debye_freq = 9.13e13;
         Slip();
         Slip(Vector6d &slip_info, vector<double> &hardens, Matrix3d lattice_vec);
+        double cal_rss(Matrix3d stress_tensor, Matrix3d deform_grad_elas);
         Matrix3d dL_tensor();
         Matrix3d dstrain_tensor();
         Matrix3d drotate_tensor();
@@ -96,7 +97,6 @@ class Slip {
         void update_ddhard(Matrix3d deform_grad_elas, vector<Slip> &slip_sys);
         void update_disvel(Matrix3d deform_grad_elas, vector<Slip> &slip_sys);
         void update_voce(vector<Slip> &slip_sys);
-        double cal_rss(Matrix3d stress_tensor, Matrix3d deform_grad_elas);
         void cal_strain_disvel_old(Matrix3d stress_tensor, Matrix3d deform_grad_elas);
         void update_disvel_old(Matrix3d deform_grad_elas, vector<Slip> &slip_sys);
 };
