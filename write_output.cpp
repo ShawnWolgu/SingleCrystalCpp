@@ -86,7 +86,7 @@ void print_custom(Grain &grain){
     Matrix3d stress_t = grain.orientation * grain.stress_tensor * grain.orientation.transpose();
     Matrix3d elastic_f = grain.orientation * grain.deform_grad_elas * grain.orientation.transpose();
     for (Slip &slip_component : grain.slip_sys){
-	custom_output_file << ',' << slip_component.cal_rss(stress_t,elastic_f) - slip_component.update_params[3];
+	custom_output_file << ',' << abs(slip_component.cal_rss(stress_t,elastic_f)) - slip_component.update_params[3];
     }
     custom_output_file << endl;
 }
