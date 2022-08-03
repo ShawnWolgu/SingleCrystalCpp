@@ -193,28 +193,29 @@ void Slip::update_disvel(Matrix3d deform_grad_elas, vector<Slip> &slip_sys){
      * 10: c_multi, 11:c_annih, 12:HP_stress.
      * 
      * update parameters:
-     * 0: burgers, 1: disl_density_for, 2: disl_density_perp, 3: back_stress,
+     * 0: burgers, 1: disl_density_for, 2: disl_density_para, 3: back_stress,
      * 4: barrier_distance
      */
     double Peierls_stress = harden_params[5], c_backstress = harden_params[9], c_multi = harden_params[10], c_annih = harden_params[11], HP_stress = harden_params[12];
-    double burgers, disl_density_for, disl_density_perp, back_stress, barrier_distance, cosine_n_m;
+    double burgers, disl_density_for, disl_density_para, back_stress, barrier_distance, cosine_n_m;
 
     SSD_density += (c_multi * sqrt(SSD_density) - c_annih * SSD_density) * abs(strain_rate_slip) * dtime;
-    disl_density_for = disl_density_perp = 0;
+    disl_density_for = disl_density_para = 0;
     for(Slip &isys : slip_sys){
-        cosine_n_m =  plane_norm.transpose() * (isys.burgers_vec / isys.burgers_vec.norm());
+	Vector3d t_vector = isys.plane_norm.cross(isys.burgers_vec);
+        cosine_n_m =  plane_norm.transpose() * (t_vector / t_vector.norm());
         disl_density_for += isys.SSD_density * abs(cosine_n_m);
-        disl_density_perp += isys.SSD_density * sqrt(1-cosine_n_m*cosine_n_m);
+        disl_density_para += isys.SSD_density * sqrt(1-cosine_n_m*cosine_n_m);
     }
     
     burgers = (deform_grad_elas * burgers_vec).norm() * 1e-10;
     //burgers = burgers_vec.norm() * 1e-10;
-    back_stress = c_backstress * shear_modulus * burgers * sqrt(disl_density_perp) + HP_stress;
+    back_stress = c_backstress * shear_modulus * burgers * sqrt(disl_density_para) + HP_stress;
     crss = Peierls_stress + back_stress; 
     barrier_distance = plane_norm_disp.cross(burgers_vec).norm() * 1e-10;
     acc_strain += abs(strain_rate_slip) * dtime;
 
-    update_params[0] = burgers, update_params[1] = disl_density_for, update_params[2] = disl_density_perp;
+    update_params[0] = burgers, update_params[1] = disl_density_for, update_params[2] = disl_density_para;
     update_params[3] = back_stress, update_params[4] = barrier_distance;
 }
 
