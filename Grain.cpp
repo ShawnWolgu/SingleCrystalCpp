@@ -62,6 +62,9 @@ void Grain::update_status(Matrix3d vel_bc_tensor, Matrix3d vel_grad_flag, Matrix
     deform_grad = (vel_bc_to_vel_grad(vel_bc_tensor)+Matrix3d::Identity()) * deform_grad;
     deform_grad_elas = (vel_grad_elas + Matrix3d::Identity()) * deform_grad_elas;
     deform_grad_plas = deform_grad_elas.inverse() * deform_grad;
+    //deform_grad = deform_grad * (vel_bc_to_vel_grad(vel_bc_tensor)+Matrix3d::Identity()).transpose();
+    //deform_grad_elas = deform_grad_elas * (vel_grad_elas + Matrix3d::Identity()).transpose();
+    //deform_grad_plas = deform_grad_elas.inverse() * deform_grad;
     for (Slip &slip_component : slip_sys) slip_component.update_status(*this);
     spin_elas = 0.5 * (vel_grad_elas - vel_grad_elas.transpose());
     orientation = orientation * Rodrigues(spin_elas).transpose(); 
