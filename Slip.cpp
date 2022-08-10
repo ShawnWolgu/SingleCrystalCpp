@@ -50,22 +50,20 @@ Matrix3d Slip::dstrain_tensor() {return 0.5 * (schmidt + schmidt.transpose()) * 
 Matrix3d Slip::drotate_tensor() {return 0.5 * (schmidt - schmidt.transpose()) * strain_rate_slip * dtime;}
 
 Matrix6d Slip::ddp_dsigma() {
-    Vector6d symSchmidt_6d = tensor_trans_order((Matrix3d)(0.5*(schmidt+schmidt.transpose())));
+    Vector6d symSchmidt_6d = strain_modi_tensor * tensor_trans_order((Matrix3d)(0.5*(schmidt+schmidt.transpose())));
     Matrix6d symSchmidt_66 = symSchmidt_6d * symSchmidt_6d.transpose();
     return symSchmidt_66 * ddgamma_dtau * dtime;
 }
 
 Matrix6d Slip::dwp_dsigma() {
-    Vector6d symSchmidt_6d = tensor_trans_order((Matrix3d)(0.5*(schmidt+schmidt.transpose())));
-    Vector6d asymSchmidt_6d = tensor_trans_order((Matrix3d)(0.5*(schmidt-schmidt.transpose())));
+    Vector6d symSchmidt_6d = strain_modi_tensor * tensor_trans_order((Matrix3d)(0.5*(schmidt+schmidt.transpose())));
+    Vector6d asymSchmidt_6d = strain_modi_tensor * tensor_trans_order((Matrix3d)(0.5*(schmidt-schmidt.transpose())));
     Matrix6d symSchmidt_66 = asymSchmidt_6d * symSchmidt_6d.transpose();
     return symSchmidt_66 * ddgamma_dtau * dtime;
 }
 
-double Slip::cal_rss(Matrix3d stress_tensor, Matrix3d deform_grad_elas){
-    Matrix3d sym_deform = deform_grad_elas.transpose() * deform_grad_elas; 
-    //return (burgers_vec / burgers_vec.norm()).transpose() * stress_tensor * plane_norm; 
-    return (burgers_vec / burgers_vec.norm()).transpose() * sym_deform * stress_tensor * plane_norm; 
+double Slip::cal_rss(Matrix3d stress_tensor){
+    return (stress_tensor.cwiseProduct(schmidt)).sum();
 }
 
 void Slip::cal_shear_modulus(Matrix6d elastic_modulus){
@@ -80,33 +78,33 @@ void Slip::cal_strain(Grain &grain, Matrix3d stress_tensor){
      * 0 : Voce Hardening; 1 : Dislocation Density Hardening; 2 : Dislocation Velocity Model;
      * Power model will be used in case 0 and 1, while Velocity model used in case 2;
      */
-    Matrix3d def_grad_elas = grain.orientation * grain.deform_grad_elas * grain.orientation.transpose();
     switch (flag_harden)
     {
     case 0:
-        cal_strain_pow(stress_tensor, def_grad_elas);
+        cal_strain_pow(stress_tensor);
         break;
     case 1:
-        cal_strain_ddhard(stress_tensor, def_grad_elas, grain.strain_rate);
+        cal_strain_ddhard(stress_tensor, grain.strain_rate);
         break;
     case 2:
-        cal_strain_disvel(stress_tensor, def_grad_elas);
+        cal_strain_disvel(stress_tensor);
         break;
     default:
-        cal_strain_pow(stress_tensor, def_grad_elas);
+        cal_strain_pow(stress_tensor);
         break;
     }
 }
 
-void Slip::cal_strain_pow(Matrix3d stress_tensor, Matrix3d deform_grad_elas){
-    double rss_slip = cal_rss(stress_tensor, deform_grad_elas);       
+void Slip::cal_strain_pow(Matrix3d stress_tensor){
+    double rss_slip = cal_rss(stress_tensor);       
     if(abs(rss_slip) > 0.5 * crss){
         strain_rate_slip = ref_strain_rate * pow(abs(rss_slip / crss), 1/rate_sen) * sign(rss_slip); 
     }
+    //cout << "rss, dgamma : " << rss_slip << "   " << strain_rate_slip*dtime << endl;
 }   
 
-void Slip::cal_strain_ddhard(Matrix3d stress_tensor, Matrix3d deform_grad_elas, double strain_rate){
-    double rss_slip = cal_rss(stress_tensor, deform_grad_elas);  
+void Slip::cal_strain_ddhard(Matrix3d stress_tensor, double strain_rate){
+    double rss_slip = cal_rss(stress_tensor);  
     double burgers = update_params[1], disl_rem_grad = update_params[2];  
     double c_multi = harden_params[3], ref_rate = harden_params[4], H_activation = harden_params[5],
            drag_stress = harden_params[6];
@@ -118,29 +116,34 @@ void Slip::cal_strain_ddhard(Matrix3d stress_tensor, Matrix3d deform_grad_elas, 
     update_params[2] = disl_rem_grad;
 }   
 
-void Slip::cal_strain_disvel(Matrix3d stress_tensor, Matrix3d deform_grad_elas){
+void Slip::cal_strain_disvel(Matrix3d stress_tensor){
     double burgers = update_params[0];
-    double rss_slip = cal_rss(stress_tensor, deform_grad_elas);
+    double rss_slip = cal_rss(stress_tensor);
     disl_vel = disl_velocity(rss_slip, harden_params, update_params);
     strain_rate_slip = SSD_density * burgers * disl_vel * sign(rss_slip);
+    //if(abs(rss_slip)>10){
+    //cout << "rss, back_stress , dgamma : " << rss_slip << "   " << update_params[3] << "   " << strain_rate_slip*dtime << endl;}
 }
 
 void Slip::update_status(Grain &grain){
     /* Select different model for shear strain rate, controlled by flag_harden.
      * 0 : Voce Hardening; 1 : Dislocation Density Hardening; 2 : Dislocation Velocity Model;
      */
-    //Matrix3d def_grad_elas = grain.orientation * grain.deform_grad_elas * grain.orientation.transpose();
-    Matrix3d def_grad_elas = Matrix3d::Identity();
+    //Update Schmidt here.
+    //Vector3d update_bv =  burgers_vec;
+    Vector3d update_bv = grain.orientation * grain.deform_grad_elas * grain.orient_ref.transpose() * burgers_vec;
+    Vector3d update_nv = grain.orientation * grain.deform_grad_elas.inverse().transpose() * grain.orient_ref.transpose() * plane_norm;
+    schmidt = update_bv / update_bv.norm() * update_nv.transpose();
     switch (flag_harden)
     {
     case 0:
         update_voce(grain.slip_sys);
         break;
     case 1:
-        update_ddhard(def_grad_elas, grain.slip_sys);
+        update_ddhard(grain.slip_sys,update_bv.norm());
         break;
     case 2:
-        update_disvel(def_grad_elas, grain.slip_sys);
+        update_disvel(grain.slip_sys,update_bv.norm());
         break;
     default:
         update_voce(grain.slip_sys);
@@ -152,20 +155,20 @@ void Slip::update_voce(vector<Slip> &slip_sys){
     /*
      * Update crss and acc_strain.
      */
-    double Gamma = acc_strain;
-    //for(Slip &isys : slip_sys){
-    //    Gamma += abs(isys.acc_strain);
-    //}
-    //acc_strain += abs(strain_rate_slip) * dtime;
+    double Gamma = 0;
+    for(Slip &isys : slip_sys){
+        Gamma += abs(isys.acc_strain);
+    }
+    acc_strain += abs(strain_rate_slip) * dtime;
     double tau_0 = harden_params[0], tau_1 = harden_params[1], h_0 = harden_params[2], h_1 = harden_params[3];
     double dtau_by_dGamma = h_1 + (abs(h_0/tau_1)*tau_1 - h_1) * exp(-Gamma*abs(h_0/tau_1)) + abs(h_0/tau_1)*h_1*Gamma*exp(-Gamma*abs(h_0/tau_1));
     for(Slip &isys : slip_sys){
         crss += abs(isys.strain_rate_slip) * dtime * 1 * dtau_by_dGamma;
-	acc_strain += abs(isys.strain_rate_slip)*dtime;
+	//acc_strain += abs(isys.strain_rate_slip)*dtime;
     }
 }
 
-void Slip::update_ddhard(Matrix3d deform_grad_elas, vector<Slip> &slip_sys){
+void Slip::update_ddhard(vector<Slip> &slip_sys, double bv_norm){
     /*
      * Update SSD_density and dislocation density hardening model parameters.
      */
@@ -175,7 +178,7 @@ void Slip::update_ddhard(Matrix3d deform_grad_elas, vector<Slip> &slip_sys){
            drag_stress = harden_params[6];
     const double chi = 0.9, k_sub = 0.086, q = 4;
 
-    burgers = (deform_grad_elas * burgers_vec).norm() * 1e-10;
+    burgers = bv_norm * 1e-10;
     tau_forest = chi * burgers * shear_modulus * sqrt(SSD_density);
     tau_subs = k_sub * shear_modulus * burgers * sqrt(subs_density) * log10(1/burgers/sqrt(subs_density));
 
@@ -189,7 +192,7 @@ void Slip::update_ddhard(Matrix3d deform_grad_elas, vector<Slip> &slip_sys){
     update_params[0] = subs_density, update_params[1] = burgers; 
 }
 
-void Slip::update_disvel(Matrix3d deform_grad_elas, vector<Slip> &slip_sys){
+void Slip::update_disvel(vector<Slip> &slip_sys, double bv_norm){
     /*
      * harden parameters: 0: SSD_density,
      * 1: freq_Debye, 2: c_length, 3: kink_energy_ref, 4: temperature_ref,
@@ -206,68 +209,66 @@ void Slip::update_disvel(Matrix3d deform_grad_elas, vector<Slip> &slip_sys){
     SSD_density += (c_multi * sqrt(SSD_density) - c_annih * SSD_density) * abs(strain_rate_slip) * dtime;
     disl_density_for = disl_density_para = 0;
     for(Slip &isys : slip_sys){
-	Vector3d t_vector = isys.plane_norm.cross(isys.burgers_vec);
+	Vector3d t_vector = burgers_vec;//isys.plane_norm.cross(isys.burgers_vec);
         cosine_n_m =  plane_norm.transpose() * (t_vector / t_vector.norm());
         disl_density_for += isys.SSD_density * abs(cosine_n_m);
         disl_density_para += isys.SSD_density * sqrt(1-cosine_n_m*cosine_n_m);
     }
     
-    disl_density_para = SSD_density;
-    burgers = (deform_grad_elas * burgers_vec).norm() * 1e-10;
+    //disl_density_para = SSD_density;
+    burgers = bv_norm * 1e-10;
     //burgers = burgers_vec.norm() * 1e-10;
     back_stress = c_backstress * shear_modulus * burgers * sqrt(disl_density_para) + HP_stress;
     crss = Peierls_stress + back_stress; 
     barrier_distance = plane_norm_disp.cross(burgers_vec).norm() * 1e-10;
     acc_strain += abs(strain_rate_slip) * dtime;
-
+    //cout << strain_rate_slip << endl;
     update_params[0] = burgers, update_params[1] = disl_density_for, update_params[2] = disl_density_para;
     update_params[3] = back_stress, update_params[4] = barrier_distance;
 }
 
-void Slip::cal_ddgamma_dtau(Grain &grain, Matrix3d stress_tensor){
+void Slip::cal_ddgamma_dtau(Matrix3d stress_tensor){
     /* Select different model for the gradient of shear strain rate by rss, controlled by flag_harden.
      * Note the slip rate will also be update in this function.
      * 0 : Voce Hardening; 1 : Dislocation Density Hardening; 2 : Dislocation Velocity Model;
      * Power model will be used in case 0 and 1, while Velocity model used in case 2;
      */
-    Matrix3d def_grad_elas = grain.orientation * grain.deform_grad_elas * grain.orientation.transpose();
-    //Matrix3d def_grad_elas = Matrix3d::Identity();
     switch (flag_harden)
     {
     case 0:
-        cal_ddgamma_dtau_pow(stress_tensor, def_grad_elas);
+        cal_ddgamma_dtau_pow(stress_tensor);
         break;
     case 1:
-        cal_ddgamma_dtau_ddhard(stress_tensor, def_grad_elas, grain.strain_rate);
+        cal_ddgamma_dtau_ddhard(stress_tensor);
         break;
     case 2:
-        cal_ddgamma_dtau_disvel(stress_tensor, def_grad_elas);
+        cal_ddgamma_dtau_disvel(stress_tensor);
         break;
     default:
-        cal_ddgamma_dtau_pow(stress_tensor, def_grad_elas);
+        cal_ddgamma_dtau_pow(stress_tensor);
         break;
     }
 }
 
-void Slip::cal_ddgamma_dtau_pow(Matrix3d stress_tensor, Matrix3d deform_grad_elas){
-    double rss_slip = cal_rss(stress_tensor, deform_grad_elas);       
+void Slip::cal_ddgamma_dtau_pow(Matrix3d stress_tensor){
+    double rss_slip = cal_rss(stress_tensor);       
     if(abs(rss_slip) > 0.5 * crss){
         ddgamma_dtau = ref_strain_rate * pow(abs(rss_slip / crss), 1/rate_sen-1) * sign(rss_slip) / rate_sen / crss * sign(rss_slip); 
         strain_rate_slip = ref_strain_rate * pow(abs(rss_slip / crss), 1/rate_sen) * sign(rss_slip); 
     }
 }   
 
-void Slip::cal_ddgamma_dtau_ddhard(Matrix3d stress_tensor, Matrix3d deform_grad_elas, double strain_rate){
-    double rss_slip = cal_rss(stress_tensor, deform_grad_elas);  
+void Slip::cal_ddgamma_dtau_ddhard(Matrix3d stress_tensor){
+    double rss_slip = cal_rss(stress_tensor);  
     if(abs(rss_slip) > 0.5 * crss){
         ddgamma_dtau = ref_strain_rate * pow(abs(rss_slip / crss), 1/rate_sen-1) * sign(rss_slip) / rate_sen / crss * sign(rss_slip); 
         strain_rate_slip = ref_strain_rate * pow(abs(rss_slip / crss), 1/rate_sen) * sign(rss_slip); 
     }
 }   
 
-void Slip::cal_ddgamma_dtau_disvel(Matrix3d stress_tensor, Matrix3d deform_grad_elas){
+void Slip::cal_ddgamma_dtau_disvel(Matrix3d stress_tensor){
     double burgers = update_params[0];
-    double rss_slip = cal_rss(stress_tensor, deform_grad_elas);
+    double rss_slip = cal_rss(stress_tensor);
     vector<double> dvel_and_vel = disl_velocity_grad(rss_slip, harden_params, update_params);
     ddgamma_dtau = SSD_density * burgers * sign(rss_slip) * dvel_and_vel[0];
     strain_rate_slip = SSD_density * burgers * dvel_and_vel[1] * sign(rss_slip);

@@ -14,6 +14,8 @@ void outfile_initialization(){
     accstrain_file << "e11,e22,e33,acc_strain1,acc_strain2,acc_strain3,...," <<endl;
     disloc_step_file << "e11,e22,e33,dd1,dd2,dd3,...," << endl; 
     euler_file << "phi1,PHI,phi2" << endl;
+    schmidt_file << "e11,e22,e33,sf1,sf2,sf3,...," << endl;
+    disvel_file << "e11,e22,e33,vel1,vel2,vel3,...," << endl;
     custom_output_initialization();
     cout << "Finish Initialization." << endl;
 }
@@ -37,6 +39,10 @@ void outfile_initialization(Grain &grain){
     grain.print_dislocation(disloc_step_file);
     euler_file << "phi1,PHI,phi2" << endl;
     grain.print_euler(euler_file);
+    title_output(schmidt_file, "e11,e22,e33,", "sf", slip_num);
+    grain.print_schmidt(schmidt_file);
+    title_output(disvel_file, "e11,e22,e33,", "vel", slip_num);
+    grain.print_disvel(disvel_file);
     custom_output_initialization();
     cout << "Finish Initialization." << endl;
 }
@@ -64,6 +70,8 @@ void grain_output(Grain &grain){
     grain.print_stress_strain_screen();
     grain.print_euler(euler_file);
     grain.print_accstrain(accstrain_file);
+    grain.print_schmidt(schmidt_file);
+    grain.print_disvel(disvel_file);
     print_custom(grain);
 }
 
@@ -78,25 +86,13 @@ void title_output(ofstream &outf, string leads, string subs, int length){
 
 // custom output settings:
 void custom_output_initialization(){
-    custom_output_file << "e11,e22,e33,teff1,teff2,teff3,teff4,teff5,teff6,teff7,teff8,teff9,teff10,teff11,teff12" << endl;
+    custom_output_file << "e11,e22,e33,U11,U12,U13,U21,U22,U23,U31,U32,U33" << endl;
 }
 
 void print_custom(Grain &grain){
-    custom_output_file << grain.strain_tensor(0,0) << ',' << grain.strain_tensor(1,1) << ',' << grain.strain_tensor(2,2) << ',';
-    Matrix3d stress_t = grain.orientation * grain.stress_tensor * grain.orientation.transpose();
-    Matrix3d elastic_f = grain.orientation * grain.deform_grad_elas * grain.orientation.transpose();
-    for (Slip &slip_component : grain.slip_sys){
-	custom_output_file << ',' << abs(slip_component.cal_rss(stress_t,elastic_f));// - slip_component.update_params[3];
-    }
+    custom_output_file << grain.strain_tensor(0,0) << ',' << grain.strain_tensor(1,1) << ',' << grain.strain_tensor(2,2);// << ',' << grain.slip_sys[4].update_params[0];
+    //Matrix3d U = (grain.orientation.transpose() * grain.orient_ref).inverse()*grain.deform_grad_elas;
+    Matrix3d U = grain.deform_grad;
+    custom_output_file << ',' << U(0,0) << ',' << U(0,1) << ',' << U(0,2) << ',' << U(1,0) << ',' << U(1,1) << ',' << U(1,2) << ',' << U(2,0) << ',' << U(2,1) << ',' << U(2,2);
     custom_output_file << endl;
 }
-// code for printing dislocation velocity
-//void custom_output_initialization(){
-//    custom_output_file << "e11,e22,e33,v1,v2,v3,v4,v5,v6,v7,v8,v9,v10,v11,v12" << endl;
-//}
-//
-//void print_custom(Grain &grain){
-//    custom_output_file << grain.strain_tensor(0,0) << ',' << grain.strain_tensor(1,1) << ',' << grain.strain_tensor(2,2) << ',';
-//    for (Slip &slip_component : grain.slip_sys) custom_output_file << ',' << slip_component.disl_vel;
-//    custom_output_file << endl;
-//}

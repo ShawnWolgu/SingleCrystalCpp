@@ -17,6 +17,10 @@ Matrix<double,9,1> tensor_trans_order_9(Matrix3d tensor){
     return Matrix<double,9,1> {{tensor(0,0), tensor(1,1), tensor(2,2), tensor(1,2), tensor(0,2), tensor(0,1), tensor(2,1), tensor(2,0), tensor(1,0)}};
 }
 
+Matrix<double,9,1> vel_to_dw(Matrix3d tensor){
+    return vel_to_dw_matrix * tensor_trans_order_9(tensor);
+}
+
 Matrix3d tensor_trans_order(Vector6d tensor){
     /** 
      * 1*6 Vector --> 3*3 Matrix: [[0,5,4],[5,1,3],[4,3,2]] 
@@ -254,6 +258,14 @@ Matrix3d Rodrigues(Matrix3d spin_elas){
         exp_skew =  Matrix3d::Identity()+ term_1 + term_2;
     }
     return exp_skew;
+}
+
+Matrix3d tensor_rot_to_CryCoord(Matrix3d tensor, Matrix3d orientation){
+    return orientation * tensor * orientation.transpose();
+}
+
+Matrix3d tensor_rot_to_RefCoord(Matrix3d tensor, Matrix3d orientation){
+    return orientation.transpose() * tensor * orientation;
 }
 
 ostream &operator<<(ostream &os, const Slip &slip){
