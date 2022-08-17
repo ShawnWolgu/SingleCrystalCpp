@@ -112,7 +112,7 @@ void Grain::solve_Lsig_iteration(Matrix3d &vel_bc_tensor, Matrix3d &vel_grad_fla
         if (abs(y_vec.norm()) > 1e-3){
     	    if (dtime < 1e-20) {cout << "Severe disconvergence!! break!" << endl; exit(0);}
     	    else{
-    	        //cout << "Severe disconvergence!! Will retry in a smaller step." << endl;
+//    	        cout << "Severe disconvergence!! Will retry in a smaller step:  " << dtime/2  << endl;
     	        dtime = dtime /2;
     	    }
         }
@@ -167,7 +167,7 @@ Matrix<double, 6, 3> Grain::get_Sigma_ik(Vector6d &stress_6d){
 }
 
 void Grain::print_stress_strain(ofstream &os){
-    os << strain_tensor(0,0) << ',' << strain_tensor(1,1) << ','  << strain_tensor(2,2) << ',' << strain_tensor(0,1) << ',' 
+    os << norm_time << ',' << strain_tensor(0,0) << ',' << strain_tensor(1,1) << ','  << strain_tensor(2,2) << ',' << strain_tensor(0,1) << ',' 
        << strain_tensor(0,2) << ',' << strain_tensor(1,2) << ','  << stress_tensor(0,0) << ',' << stress_tensor(1,1) << ',' 
        << stress_tensor(2,2) << ',' << stress_tensor(0,1) << ','  << stress_tensor(0,2) << ',' << stress_tensor(1,2)  << endl;
 }
@@ -179,7 +179,7 @@ void Grain::print_stress_strain_screen(){
 }
 
 void Grain::print_dislocation(ofstream &os){
-    os << strain_tensor(0,0) << ',' << strain_tensor(1,1) << ','  << strain_tensor(2,2);
+    os << norm_time << ',' << strain_tensor(0,0) << ',' << strain_tensor(1,1) << ','  << strain_tensor(2,2);
     for (Slip &slip_component : slip_sys) os << ',' << slip_component.SSD_density;
     os << endl;
 }

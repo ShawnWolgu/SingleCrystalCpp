@@ -1,6 +1,6 @@
 #include "singleX.h"
 
-double timestep = 0.001, substep = 0.001, dtime = substep*timestep, m = 0.05, max_strain = 0.2, temperature = 298, outputstep = 0.001;
+double timestep = 0.001, substep = 0.001, dtime = substep*timestep, m = 0.05, max_strain = 0.2, temperature = 298, outputstep = 0.001, norm_time = 0.0;
 int flag_harden = 0;
 string sxfile_path = "SingleX.txt", loadfile_path = "Load.txt", configure_path = "Config.txt";
 

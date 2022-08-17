@@ -209,7 +209,7 @@ void Slip::update_disvel(vector<Slip> &slip_sys, double bv_norm){
     SSD_density += (c_multi * sqrt(SSD_density) - c_annih * SSD_density) * abs(strain_rate_slip) * dtime;
     disl_density_for = disl_density_para = 0;
     for(Slip &isys : slip_sys){
-	Vector3d t_vector = burgers_vec;//isys.plane_norm.cross(isys.burgers_vec);
+	Vector3d t_vector = isys.plane_norm.cross(isys.burgers_vec);
         cosine_n_m =  plane_norm.transpose() * (t_vector / t_vector.norm());
         disl_density_for += isys.SSD_density * abs(cosine_n_m);
         disl_density_para += isys.SSD_density * sqrt(1-cosine_n_m*cosine_n_m);

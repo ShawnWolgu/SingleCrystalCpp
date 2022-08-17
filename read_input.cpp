@@ -22,18 +22,23 @@ void set_config(){
 	while (!config.eof()){
 	    getline(config,input_line);
 	    if (input_line[0] == '#'){
-		if((input_line.find("Single") != input_line.npos) || (input_line.find("sx") != input_line.npos)){
+		if(((input_line.find("Single") != input_line.npos) || (input_line.find("sx") != input_line.npos)) && (sxfile_path == "")){
 		    sxfile_path = get_next_line(config);
 		}
-		if((input_line.find("Load") != input_line.npos) || (input_line.find("load") != input_line.npos)){
+		if(((input_line.find("Load") != input_line.npos) || (input_line.find("load") != input_line.npos)) && (loadfile_path == "")){
 		    loadfile_path = get_next_line(config);
 		}
 	    }
 	}
     }
+    else{
+	    if(sxfile_path == "") sxfile_path = "SingleX.txt";
+	    if(loadfile_path == "") loadfile_path = "Load.txt";
+    }
 }
 
 Grain read_grain(){
+    cout << "Read Grain File: " << sxfile_path << endl;
     ifstream input_file(sxfile_path);
     if (!input_file) {
 	cout << "Cannot find input_file!" << endl;
@@ -197,7 +202,7 @@ void add_slips(ifstream &is, vector<Slip> &slips, Matrix3d lattice_vecs){
 }
 
 void read_load(Matrix3d &vel_grad_tensor, Matrix3d &vel_grad_flag, Matrix3d &stress_incr, Matrix3d &dstress_flag){
-    cout << "Open Load File." << endl;
+    cout << "Read Load File:  " << loadfile_path << endl;
     ifstream load_file(loadfile_path,ifstream::in);
     if (!load_file) {
 	cout << "Cannot find load_file!" << endl;
@@ -357,19 +362,10 @@ void step_config(string in_str){
     double temp[3]={0,0,0};
     int temp_idx = 0;
     while (!stream.eof()) stream >> temp[temp_idx++];
-    timestep = 0.001, substep = 0.001, dtime = substep*timestep, max_strain = 0.2;
 
-    if (temp[0] != 0) {
-        timestep = temp[0];
-    }
-
-    if (temp[1] != 0) {
-        substep = temp[1];
-    }
-
-    if (temp[2] != 0) {
-        max_strain = temp[2];
-    }
+    if (timestep == 0){ if(temp[0]!=0) timestep = temp[0]; else timestep = 0.001; }
+    if (substep == 0){ if(temp[1]!=0) substep = temp[1]; else substep = 0.001; }
+    if (max_strain == 0){ if(temp[2]!=0) max_strain = temp[2]; else max_strain = 0.2; }
     dtime = substep*timestep;
 }
 

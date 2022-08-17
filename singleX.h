@@ -22,7 +22,7 @@ typedef Matrix<double, 6, 6> Matrix6d;
 #define MPa_to_Pa 1e6
 
 // [global variables]
-extern double timestep, substep, dtime, m, max_strain, temperature, outputstep;
+extern double timestep, substep, dtime, m, max_strain, temperature, outputstep, norm_time;
 extern int flag_harden;
 extern ofstream stress_file, disloc_file, crss_file, stress_step_file, disloc_step_file, disloc_step_file, euler_file, custom_output_file, accstrain_file, schmidt_file, disvel_file;
 extern string sxfile_path, loadfile_path, configure_path;

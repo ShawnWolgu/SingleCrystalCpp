@@ -15,6 +15,7 @@ def getplot_database(folders,filename,xcol,ycol):
     return database
 
 folders = sys.argv[1:]
-plotdata(getplot_database(folders,'stress_grain.csv',2,8),'stress')
+plotdata(getplot_database(folders,'stress_grain.csv',3,9),'stress')
+plotdata(getplot_database(folders,'stress_step.csv',0,9),'stress_step',xlim=(0,25),ylim=(0,800))
 
 
