@@ -220,3 +220,9 @@ void Grain::print_disvel(ofstream &os){
     for (Slip &slip_component : slip_sys) os << ',' << slip_component.disl_vel;
     os << endl;
 }
+
+void Grain::print_time(ofstream &os){
+    os << norm_time << ',' << strain_tensor(0,0) << ',' << strain_tensor(1,1) << ',' << strain_tensor(2,2) << ',';
+    for (Slip &slip_component : slip_sys) os << ',' << slip_component.t_wait << ',' << slip_component.t_run;
+    os << endl;
+}

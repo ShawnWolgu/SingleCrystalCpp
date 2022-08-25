@@ -8,7 +8,7 @@ vector<double> waiting_time_grad(double rss, double freq_Debye, double c_length,
 vector<double> running_time_grad(double rss, double c_drag, double wave_speed, double barrier_distance, double burgers, double back_stress);
 
 
-double disl_velocity(double rss, vector<double> harden_params, vector<double> update_params){
+double Slip::disl_velocity(double rss){
     /*
      * harden parameters: 0: SSD_density,
      * 1: freq_Debye, 2: c_length, 3: kink_energy_ref, 4: temperature_ref,
@@ -25,9 +25,9 @@ double disl_velocity(double rss, vector<double> harden_params, vector<double> up
     double burgers = update_params[0], disl_density_for = update_params[1],\
            back_stress = update_params[3], barrier_distance = update_params[4];
     if(abs(rss)-back_stress > 1e-20){
-        double t_wait = waiting_time(rss, freq_Debye, c_length, burgers, disl_density_for, kink_energy_ref, back_stress,\
+        t_wait = waiting_time(rss, freq_Debye, c_length, burgers, disl_density_for, kink_energy_ref, back_stress,\
                     Peierls_stress, expo_kinkeng, temperature_ref); 
-        double t_run = running_time(rss, c_drag, wave_speed, barrier_distance, burgers, back_stress);
+        t_run = running_time(rss, c_drag, wave_speed, barrier_distance, burgers, back_stress);
 //	cout << "t_wait, t_run = " << t_wait << "," << t_run << endl;
         return barrier_distance / (t_wait + t_run);
     }
@@ -35,6 +35,16 @@ double disl_velocity(double rss, vector<double> harden_params, vector<double> up
 }
 
 double waiting_time(double rss, double freq_Debye, double c_length, double burgers, double disl_density_for, double kink_energy_ref, double back_stress,\
+                    double Peierls_stress, double expo_kinkeng, double temperature_ref){
+    rss = rss* MPa_to_Pa, back_stress = back_stress*MPa_to_Pa, Peierls_stress = Peierls_stress*MPa_to_Pa, kink_energy_ref = kink_energy_ref*eV_to_J;
+    double stress_norm = min((abs(rss) - back_stress)/Peierls_stress,1.00);
+    double kink_energy = kink_energy_ref;
+    double kink_volume = 400 * pow(burgers,3);
+    double freq = freq_Debye * pow(burgers,2) * (c_length / sqrt(disl_density_for))/abs(kink_volume+1e-30) * exp(-kink_energy/(k_boltzmann * temperature)) * sinh(stress_norm);
+//    cout << "Qs, Vs, Freq = " << kink_energy / eV_to_J << ", " << kink_volume * 1e30 << ", " <<  freq_Debye * pow(burgers,2) * (c_length / sqrt(disl_density_for))/kink_volume << endl;
+    return 1 / max(freq, 1e-20);
+}
+double waiting_time_self(double rss, double freq_Debye, double c_length, double burgers, double disl_density_for, double kink_energy_ref, double back_stress,\
                     double Peierls_stress, double expo_kinkeng, double temperature_ref){
     rss = rss* MPa_to_Pa, back_stress = back_stress*MPa_to_Pa, Peierls_stress = Peierls_stress*MPa_to_Pa, kink_energy_ref = kink_energy_ref*eV_to_J;
     double stress_norm = min((abs(rss) - back_stress)/Peierls_stress,1.00);
@@ -85,7 +95,7 @@ vector<double> disl_velocity_grad(double rss, vector<double> harden_params, vect
         }
 }
 
-vector<double> waiting_time_grad(double rss, double freq_Debye, double c_length, double burgers, double disl_density_for, double kink_energy_ref, double back_stress,\
+vector<double> waiting_time_grad_self(double rss, double freq_Debye, double c_length, double burgers, double disl_density_for, double kink_energy_ref, double back_stress,\
                     double Peierls_stress, double expo_kinkeng, double temperature_ref){
     /* Return a vector: 0. dtw/dtau, 1. tw. */
     rss = rss* MPa_to_Pa, back_stress = back_stress*MPa_to_Pa, Peierls_stress = Peierls_stress*MPa_to_Pa, kink_energy_ref = kink_energy_ref*eV_to_J;
@@ -97,6 +107,20 @@ vector<double> waiting_time_grad(double rss, double freq_Debye, double c_length,
     double freq_const = freq_Debye * pow(burgers,2) * (c_length / sqrt(disl_density_for)); 
     double dtw_dtau = 1/freq_const * exp(kink_energy/k_boltzmann/temperature) * (dvolume_dtau - kink_volume * kink_volume / k_boltzmann/temperature);
     double freq = freq_const/abs(kink_volume+1e-30) * exp(-kink_energy/(k_boltzmann * temperature));
+    vector<double> result ={ dtw_dtau*MPa_to_Pa, 1/max(freq, 1e-25)};
+    return result;
+}
+
+vector<double> waiting_time_grad(double rss, double freq_Debye, double c_length, double burgers, double disl_density_for, double kink_energy_ref, double back_stress,\
+                    double Peierls_stress, double expo_kinkeng, double temperature_ref){
+    /* Return a vector: 0. dtw/dtau, 1. tw. */
+    rss = rss* MPa_to_Pa, back_stress = back_stress*MPa_to_Pa, Peierls_stress = Peierls_stress*MPa_to_Pa, kink_energy_ref = kink_energy_ref*eV_to_J;
+    double stress_norm = min((abs(rss) - back_stress)/Peierls_stress,1.00);
+    double kink_energy = kink_energy_ref;
+    double kink_volume = 400 * pow(burgers,3);
+    double freq_const = freq_Debye * pow(burgers,2) * (c_length / sqrt(disl_density_for)) / abs(kink_volume + 1e-30); 
+    double freq = freq_const * exp(-kink_energy/(k_boltzmann * temperature)) * sinh(stress_norm);
+    double dtw_dtau = 1/freq_const * exp(kink_energy/k_boltzmann/temperature) * (-1 * cosh(stress_norm) / pow(sinh(stress_norm),2) * sign(rss) / Peierls_stress);
     vector<double> result ={ dtw_dtau*MPa_to_Pa, 1/max(freq, 1e-25)};
     return result;
 }

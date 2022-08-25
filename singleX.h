@@ -24,7 +24,7 @@ typedef Matrix<double, 6, 6> Matrix6d;
 // [global variables]
 extern double timestep, substep, dtime, m, max_strain, temperature, outputstep, norm_time;
 extern int flag_harden;
-extern ofstream stress_file, disloc_file, crss_file, stress_step_file, disloc_step_file, disloc_step_file, euler_file, custom_output_file, accstrain_file, schmidt_file, disvel_file;
+extern ofstream stress_file, disloc_file, crss_file, stress_step_file, disloc_step_file, disloc_step_file, euler_file, custom_output_file, accstrain_file, schmidt_file, disvel_file,time_step_file;
 extern string sxfile_path, loadfile_path, configure_path;
 extern Matrix6d strain_modi_tensor;
 extern Matrix<double,9,9> bc_modi_matrix, vel_to_dw_matrix;
@@ -68,7 +68,6 @@ Matrix<double,9,1> tensor_trans_order_9(Matrix3d tensor);
 Matrix<double,9,1> vel_to_dw(Matrix3d tensor);
 
 // [dislocation velocity model]
-double disl_velocity(double rss, vector<double> harden_params, vector<double> update_params);
 vector<double> disl_velocity_grad(double rss, vector<double> harden_params, vector<double> update_params);
 
 // [class members]
@@ -78,6 +77,7 @@ class Slip {
         Matrix3d schmidt;
         vector<double> harden_params, update_params;
         double ref_strain_rate = 0.001, rate_sen = m, strain_rate_slip, ddgamma_dtau, shear_modulus, SSD_density, crss, acc_strain, disl_vel;
+	double t_wait = 0.0, t_run = 0.0;
         const double debye_freq = 9.13e13;
         Slip();
         Slip(Vector6d &slip_info, vector<double> &hardens, Matrix3d lattice_vec);
@@ -101,6 +101,7 @@ class Slip {
         void update_ddhard(vector<Slip> &slip_sys, double bv);
         void update_disvel(vector<Slip> &slip_sys, double bv);
         void update_voce(vector<Slip> &slip_sys);
+        double disl_velocity(double rss);
 };
 
 
@@ -121,6 +122,7 @@ class Grain{
         void print_euler(ofstream &os);
 	void print_schmidt(ofstream &os);
 	void print_disvel(ofstream &os);
+	void print_time(ofstream &os);
         Matrix3d get_vel_grad_plas(Matrix3d stress_incr);
     private:
         Vector6d solve_L_dsigma(Matrix3d &vel_grad_elas, Matrix3d &vel_grad_flag, Matrix3d &stress_incr, Matrix3d &dstress_flag);

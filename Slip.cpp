@@ -119,7 +119,7 @@ void Slip::cal_strain_ddhard(Matrix3d stress_tensor, double strain_rate){
 void Slip::cal_strain_disvel(Matrix3d stress_tensor){
     double burgers = update_params[0];
     double rss_slip = cal_rss(stress_tensor);
-    disl_vel = disl_velocity(rss_slip, harden_params, update_params);
+    disl_vel = disl_velocity(rss_slip);
     strain_rate_slip = SSD_density * burgers * disl_vel * sign(rss_slip);
     //if(abs(rss_slip)>10){
     //cout << "rss, back_stress , dgamma : " << rss_slip << "   " << update_params[3] << "   " << strain_rate_slip*dtime << endl;}

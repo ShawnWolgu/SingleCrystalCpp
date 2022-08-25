@@ -4,6 +4,7 @@ void custom_output_initialization();
 void print_custom(Grain &grain);
 
 void title_output(ofstream &outf, string leads, string subs, int length);
+void title_output(ofstream &outf, string leads, string subs1, string subs2, int length);
 
 void outfile_initialization(){
     cout << "Output Files Initialing " << endl;
@@ -37,6 +38,10 @@ void outfile_initialization(Grain &grain){
     grain.print_accstrain(accstrain_file);
     title_output(disloc_step_file, "time,e11,e22,e33,", "ssd", slip_num);
     grain.print_dislocation(disloc_step_file);
+    if (flag_harden == 2) {
+        title_output(time_step_file, "time,e11,e22,e33,", "tw","tr", slip_num);
+        grain.print_time(time_step_file);
+    };
     euler_file << "phi1,PHI,phi2" << endl;
     grain.print_euler(euler_file);
     title_output(schmidt_file, "e11,e22,e33,", "sf", slip_num);
@@ -61,6 +66,7 @@ void outfile_close(){
 void substep_output(Grain &grain){
     grain.print_stress_strain(stress_step_file);
     grain.print_dislocation(disloc_step_file);
+    if (flag_harden == 2) grain.print_time(time_step_file);
 }
 
 void grain_output(Grain &grain){
@@ -79,6 +85,17 @@ void title_output(ofstream &outf, string leads, string subs, int length){
     outf << leads;
     for(int i = 0; i != length; ++i){
         string dtitle = subs + to_string(i);
+        outf << dtitle << ",";
+    }
+    outf << endl;
+}
+
+void title_output(ofstream &outf, string leads, string subs1, string subs2, int length){
+    outf << leads;
+    for(int i = 0; i != length; ++i){
+        string dtitle = subs1 + to_string(i);
+        outf << dtitle << ",";
+        dtitle = subs2 + to_string(i);
         outf << dtitle << ",";
     }
     outf << endl;
