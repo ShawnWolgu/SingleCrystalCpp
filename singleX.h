@@ -46,6 +46,7 @@ void outfile_close();
 
 // [load apply]
 void singleXloading(Grain &grain, Matrix3d vel_grad_tensor, Matrix3d vel_grad_flag, Matrix3d stress_incr, Matrix3d dstress_flag, bool flag_subprint);
+void adaptive_step_load_sx(Grain &grain, Matrix3d vel_grad_tensor, Matrix3d vel_grad_flag, Matrix3d stress_incr, Matrix3d dstress_flag, bool flag_subprint);
 
 // [functions]
 void flag_to_idx(Matrix<double, 15, 1> flag, vector<int> &known_idx, vector<int> &unknown_idx);
@@ -114,6 +115,7 @@ class Grain{
         Grain();
         Grain(Matrix6d elastic_mod, Matrix3d lat_vecs, vector<Slip> s, Matrix3d orient_Mat);
         void update_status(Matrix3d L_dt_tensor, Matrix3d vel_grad_flag, Matrix3d stress_incr, Matrix3d dstress_flag);
+        void update_status_adaptive(Matrix3d L_dt_tensor, Matrix3d vel_grad_flag, Matrix3d stress_incr, Matrix3d dstress_flag);
         void print_stress_strain(ofstream &os);
         void print_stress_strain_screen();
         void print_dislocation(ofstream &os);
@@ -137,6 +139,7 @@ class Grain{
         Matrix<double, 6, 3> get_Sigma_ik(Vector6d &stress_6d);
 	void calc_slip_ddgamma_dtau(Matrix3d stress_3d);
         void solve_Lsig_iteration(Matrix3d &L_dt_tensor, Matrix3d &vel_grad_flag, Matrix3d &stress_incr, Matrix3d &dstress_flag);
+        void solve_Lsig_iteration_adaptive(Matrix3d &L_dt_tensor, Matrix3d &vel_grad_flag, Matrix3d &stress_incr, Matrix3d &dstress_flag);
 };
 
 #endif

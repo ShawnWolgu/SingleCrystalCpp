@@ -4,7 +4,7 @@
 int main(int argc, char **argv)
 {
     Matrix3d strain_tensor = Matrix3d::Zero(), strain_plastic = Matrix3d::Zero(), strain_elastic =  Matrix3d::Zero(), stress_tensor = Matrix3d::Zero();
-    bool flag_subprint = false, flag_test = false;
+    bool flag_subprint = false, flag_test = false, flag_adaptive = false;
     //[Read cmd args]
     try {  
 	TCLAP::CmdLine cmd("Command description message", ' ', "0.9");
@@ -15,6 +15,7 @@ int main(int argc, char **argv)
 	TCLAP::ValueArg<string> loadStr("l","load","Set the Load file path", false, "", "string");
 	TCLAP::ValueArg<string> sxStr("x","sx","Set the SX file path", false, "", "string");
 	TCLAP::SwitchArg subprintSwitch("p","subprint","Print the substep informations", cmd, false);
+	TCLAP::SwitchArg adaptiveSwitch("a","adaptive","Adaptive the loading step during calculation", cmd, false);
 	TCLAP::SwitchArg testSwitch("t","test","Only test the input configrations", cmd, false);
 
 	cmd.add(stepArg); cmd.add(substepArg); cmd.add(outputArg); cmd.add(endArg);
@@ -23,8 +24,9 @@ int main(int argc, char **argv)
 	cmd.parse( argc, argv );
 	timestep = stepArg.getValue(), substep = substepArg.getValue(), outputstep = outputArg.getValue(), max_strain = endArg.getValue();
 	loadfile_path = loadStr.getValue(); sxfile_path = sxStr.getValue();
-	flag_subprint = subprintSwitch.getValue(); flag_test = testSwitch.getValue();
+	flag_subprint = subprintSwitch.getValue(); flag_test = testSwitch.getValue(); flag_adaptive = adaptiveSwitch.getValue();
 	if ( flag_subprint ) cout << "Enable printing substep informations. " << endl;
+	if ( flag_adaptive ) cout << "Enable adaptive loading step." << endl;
 
 	} catch (TCLAP::ArgException &e)  // catch exceptions
 	{ std::cerr << "error: " << e.error() << " for arg " << e.argId() << std::endl; }
@@ -48,11 +50,11 @@ int main(int argc, char **argv)
     cout << "Settings: " << endl << "Timestep: " << timestep << endl << "Substep: " << substep << endl \
 	 << "dtime: " << dtime << endl << "outputstep: " << outputstep << endl << "max_strain: " << max_strain << endl;
     
-    if ( flag_test == false ){
+    if (flag_test == false){
     //[Start Loading]
-    singleXloading(testgrain, vel_grad_tensor, vel_grad_flag, stress_incr, dstress_flag, flag_subprint);
-    outfile_close();
-    cout << "finish!" << endl;
+    	if (flag_adaptive == true) adaptive_step_load_sx(testgrain, vel_grad_tensor, vel_grad_flag, stress_incr, dstress_flag, flag_subprint);
+    	else singleXloading(testgrain, vel_grad_tensor, vel_grad_flag, stress_incr, dstress_flag, flag_subprint);
+    	outfile_close(); cout << "finish!" << endl;
     }
     return 0;
 }
