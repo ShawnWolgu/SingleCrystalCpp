@@ -1,15 +1,18 @@
 #include "singleX.h"
 
+void print_harden_law();
+void add_slips(ifstream &is, vector<Slip> &slips, Matrix3d lattice_vecs);
+void vel_grad_modify(char &flag_1, char &flag_2, int compoidx, Matrix3d &vel_grad_tensor);
+void step_config(string in_str);
+int get_interaction_mode(Vector3d burgers_i, Vector3d plane_i, Vector3d burgers_j, Vector3d plane_j);
+double cal_cosine(Vector3d vec_i, Vector3d vec_j);
+MatrixXd latent_hardening_matrix(vector<Slip> &slips);
 Matrix6d read_elastic(ifstream &is);
 Matrix3d read_lattice(ifstream &is);
 Matrix3d read_orientation(ifstream &is);
 Matrix3d read_euler(ifstream &is);
-void print_harden_law();
-void add_slips(ifstream &is, vector<Slip> &slips, Matrix3d lattice_vecs);
 Matrix3d vel_grad_flag_config(ifstream &load_file, Matrix3d &vel_grad_tensor);
 Matrix3d load_matrix_input(ifstream &load_file);
-void vel_grad_modify(char &flag_1, char &flag_2, int compoidx, Matrix3d &vel_grad_tensor);
-void step_config(string in_str);
 string get_next_line(ifstream &infile);
 bool hasEnding (std::string const &fullString, std::string const &ending);
 
@@ -84,7 +87,9 @@ Grain read_grain(){
     }
     input_file.close();
     for(auto &islip : slips) islip.cal_shear_modulus(elastic_modulus);
-    return Grain(elastic_modulus, lattice_vecs, slips, orientation);
+    MatrixXd lat_hard_mat = latent_hardening_matrix(slips);
+    cout << "Latent Hardening Matrix:" << endl << lat_hard_mat << endl;
+    return Grain(elastic_modulus, lattice_vecs, slips, lat_hard_mat, orientation);
 }
 
 Matrix6d read_elastic(ifstream &is){
@@ -96,7 +101,7 @@ Matrix6d read_elastic(ifstream &is){
         temp_idx = 0;
         getline(is, temp_str);
         stringstream stream(temp_str);
-        while(!stream.eof()) stream >> temp[temp_idx++];
+        while(!stream.eof() && temp_idx!=6) stream >> temp[temp_idx++];
         modulus.row(row_num) << temp[0], temp[1], temp[2], temp[3], temp[4], temp[5];
     }
     cout << "Read Elastic Modulus:" << endl << modulus << endl;
@@ -112,7 +117,7 @@ Matrix3d read_lattice(ifstream &is){
         temp_idx = 0;
         getline(is, temp_str);
         stringstream stream(temp_str);
-        while(!stream.eof()) stream >> temp[temp_idx++];
+        while(!stream.eof() && temp_idx!=3) stream >> temp[temp_idx++];
         lattice.row(row_num) << temp[0], temp[1], temp[2];
     }
     cout << "Read Lattice Vectors:" << endl << lattice << endl;
@@ -128,7 +133,7 @@ Matrix3d read_orientation(ifstream &is){
         temp_idx = 0;
         getline(is, temp_str);
         stringstream stream(temp_str);
-        while(!stream.eof()) stream >> temp[temp_idx++];
+        while(!stream.eof() && temp_idx!=3) stream >> temp[temp_idx++];
         orientation.row(row_num) << temp[0], temp[1], temp[2];
     }
     cout << "Read Orientation Matrix:" << endl << orientation << endl;    
@@ -144,11 +149,17 @@ Matrix3d read_euler(ifstream &is){
     temp_idx = 0;
     getline(is, temp_str);
     stringstream stream(temp_str);
-    while(!stream.eof()) stream >> temp[temp_idx++];
-    euler_angle << temp[0], temp[1], temp[2];
+    if((temp_str.find("Cmd") != temp_str.npos) || (temp_str.find("cmd") != temp_str.npos)) {
+	euler_angle[0] = euler_line_input[0], euler_angle[1] = euler_line_input[1], euler_angle[2] = euler_line_input[2];
+    }
+    else{	
+    	while(!stream.eof() && temp_idx!=3) stream >> temp[temp_idx++];
+    	euler_angle << temp[0], temp[1], temp[2];
+    }
     cout << "Euler Angle:" << endl << euler_angle.transpose() << endl; 
     orientation = Euler_trans(euler_angle);
     cout << "Read Orientation Matrix (From Euler Angle):" << endl << orientation << endl; 
+    cout << "Euler Angle (From Orientation Matrix):" << endl << Euler_trans(orientation) << endl; 
     return orientation;
 }
 
@@ -173,7 +184,7 @@ void print_harden_law(){
 void add_slips(ifstream &is, vector<Slip> &slips, Matrix3d lattice_vecs){
     string input_line;
     vector<Vector6d> slip_infos;
-    vector<double> harden_params;
+    vector<double> harden_params, latent_params;
     double temp;
     int slip_num = 0;
 
@@ -188,16 +199,66 @@ void add_slips(ifstream &is, vector<Slip> &slips, Matrix3d lattice_vecs){
         slip_infos.push_back(p_b);
     }
     getline(is, input_line);
-    if(input_line[0] == '#')     getline(is, input_line);
+    while(input_line[0] == '#')     getline(is, input_line);
     stringstream stream(input_line);
     while(stream >> temp) harden_params.push_back(temp);
 
+    getline(is, input_line);
+    while(input_line[0] == '#')     getline(is, input_line);
+    stringstream lat_stream(input_line);
+    while(lat_stream >> temp) latent_params.push_back(temp);
+
     for(int islip = 0; islip != slip_num; ++islip){
-        Slip temp_slip(slip_infos[islip], harden_params, lattice_vecs);
+	int crt_num = slips.size();
+        Slip temp_slip(crt_num, slip_infos[islip], harden_params, latent_params, lattice_vecs);
+	cout << "Slip No." << crt_num << endl;
         cout << slip_infos[islip].transpose() << endl;
         for (auto i: harden_params) std::cout << i << ' ';
         cout << endl;
+        for (auto i: latent_params) std::cout << i << ' ';
+        cout << endl;
         slips.push_back(temp_slip);
+    }
+}
+
+MatrixXd latent_hardening_matrix(vector<Slip> &slips){
+    int count_slip = slips.size();
+    MatrixXd lat_hard_mat; lat_hard_mat.resize(count_slip,count_slip);
+    for (auto islip : slips){
+	for (auto jslip : slips){
+	    if (islip.num == jslip.num) lat_hard_mat(islip.num,jslip.num) = 1;
+	    else{
+	    	int mode = get_interaction_mode(islip.burgers_vec, islip.plane_norm, jslip.burgers_vec, jslip.plane_norm);
+	    	lat_hard_mat(islip.num,jslip.num) = islip.latent_params[mode];
+	    }
+	}
+    }
+    return lat_hard_mat;
+}
+
+double cal_cosine(Vector3d vec_i, Vector3d vec_j){
+   return vec_i.dot(vec_j)/(vec_i.norm() * vec_j.norm());
+}
+
+int get_interaction_mode(Vector3d burgers_i, Vector3d plane_i, Vector3d burgers_j, Vector3d plane_j){
+    /*
+     * Return the dislocation interaction mode code between two slip system.
+     * 0: No Junction, 1: Hirth Lock, 2: Coplanar Junction, 3: Glissile Junction, 4: Sessile Junction
+     */
+    double perp = 0.02, prll = 0.98;
+    double cos_b_angle = cal_cosine(burgers_i, burgers_j);
+    if(abs(cos_b_angle) < perp) return 1;
+    else {
+	if(abs(cos_b_angle) > prll) return 0;
+	else{
+	    if (abs(cal_cosine(plane_i, plane_j)) > prll) return 2;
+	    else{
+		bool if_glide_i = (abs(cal_cosine(plane_i, burgers_i+burgers_j)) < perp);
+		bool if_glide_j = (abs(cal_cosine(plane_j, burgers_i+burgers_j)) < perp);
+	    	if (if_glide_i || if_glide_j) return 3;
+		else return 4;
+	    }
+	}
     }
 }
 

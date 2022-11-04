@@ -3,10 +3,11 @@
 Grain::Grain(): deform_grad(Matrix3d::Identity()), deform_grad_elas(deform_grad), deform_grad_plas(Matrix3d::Zero()), stress_tensor(Matrix3d::Zero()),
             strain_tensor(Matrix3d::Zero()), orientation(Matrix3d::Identity()), elastic_modulus(Matrix6d::Identity()), elastic_modulus_ref(Matrix6d::Identity()) {};
 
-Grain::Grain(Matrix6d elastic_mod, Matrix3d lat_vecs, vector<Slip> s, Matrix3d orient_Mat){
+Grain::Grain(Matrix6d elastic_mod, Matrix3d lat_vecs, vector<Slip> s, MatrixXd latent_matrix, Matrix3d orient_Mat){
     deform_grad = Matrix3d::Identity(), deform_grad_elas = deform_grad, deform_grad_plas = stress_tensor = Matrix3d::Zero(),
     strain_tensor = Matrix3d::Zero(), orient_ref = orientation = orient_Mat, elastic_modulus_ref = elastic_mod,  elastic_modulus = rotate_6d_stiff_modu(elastic_mod,orientation.transpose());
     lattice_vec = lat_vecs;
+    lat_hard_mat = latent_matrix;
     for (Slip &slip_component : s) slip_sys.push_back(slip_component); 
     for (Slip &slip_component : slip_sys) slip_component.update_status(*this);
     strain_modi_tensor.diagonal() << 1,1,1,2,2,2;
@@ -63,6 +64,7 @@ void Grain::update_status(Matrix3d vel_bc_tensor, Matrix3d vel_grad_flag, Matrix
     deform_grad_plas = deform_grad_elas.inverse() * deform_grad;
     spin_elas = 0.5 * (vel_grad_elas - vel_grad_elas.transpose());
     orientation = orientation * Rodrigues(spin_elas).transpose(); 
+    for (Slip &slip_component : slip_sys) slip_component.update_ssd();
     for (Slip &slip_component : slip_sys) slip_component.update_status(*this);
 }
 
@@ -129,6 +131,7 @@ void Grain::update_status_adaptive(Matrix3d vel_bc_tensor, Matrix3d vel_grad_fla
     deform_grad_plas = deform_grad_elas.inverse() * deform_grad;
     spin_elas = 0.5 * (vel_grad_elas - vel_grad_elas.transpose());
     orientation = orientation * Rodrigues(spin_elas).transpose(); 
+    for (Slip &slip_component : slip_sys) slip_component.update_ssd(); 
     for (Slip &slip_component : slip_sys) slip_component.update_status(*this);
     //cout << "-------------------------------------------------------------------" << endl;
     //cout << "U : " << tensor_trans_order_9((Matrix3d)(orient_ref.transpose() * orientation * deform_grad_elas)).transpose() << endl;

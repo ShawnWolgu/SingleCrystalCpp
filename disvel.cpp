@@ -6,6 +6,8 @@ double running_time(double rss, double c_drag, double wave_speed, double barrier
 vector<double> waiting_time_grad(double rss, double freq_Debye, double c_length, double burgers, double disl_density_for, double kink_energy_ref, double back_stress,\
                     double Peierls_stress, double expo_kinkeng, double temperature_ref);
 vector<double> running_time_grad(double rss, double c_drag, double wave_speed, double barrier_distance, double burgers, double back_stress);
+double cal_ref_freq(double rss, double freq_Debye, double c_length, double burgers, double disl_density_for, double kink_energy_ref, double back_stress,\
+                    double Peierls_stress, double expo_kinkeng, double temperature_ref);
 
 
 double Slip::disl_velocity(double rss){
@@ -28,6 +30,9 @@ double Slip::disl_velocity(double rss){
         t_wait = waiting_time(rss, freq_Debye, c_length, burgers, disl_density_for, kink_energy_ref, back_stress,\
                     Peierls_stress, expo_kinkeng, temperature_ref); 
         t_run = running_time(rss, c_drag, wave_speed, barrier_distance, burgers, back_stress);
+        double freq_const = cal_ref_freq(rss, freq_Debye, c_length, burgers, disl_density_for, kink_energy_ref, back_stress,\
+                    Peierls_stress, expo_kinkeng, temperature_ref); 
+    	ref_rate = freq_const * barrier_distance * SSD_density * burgers;
 //	cout << "t_wait, t_run = " << t_wait << "," << t_run << endl;
         return barrier_distance / (t_wait + t_run);
     }
@@ -42,6 +47,16 @@ double waiting_time(double rss, double freq_Debye, double c_length, double burge
     kink_energy = min(kink_energy,500 * k_boltzmann * temperature);
     double arrh_term = exp(kink_energy/(k_boltzmann*temperature));
     return 1 / freq_const * arrh_term;
+}
+
+double cal_ref_freq(double rss, double freq_Debye, double c_length, double burgers, double disl_density_for, double kink_energy_ref, double back_stress,\
+                    double Peierls_stress, double expo_kinkeng, double temperature_ref){
+    rss = rss*MPa_to_Pa, back_stress = back_stress*MPa_to_Pa, Peierls_stress = Peierls_stress*MPa_to_Pa, kink_energy_ref = kink_energy_ref*eV_to_J;
+    double freq_const = freq_Debye * pow(burgers,2) * c_length / sqrt(disl_density_for) * Peierls_stress / kink_energy_ref;
+    double kink_energy = kink_energy_ref * (1-pow(abs(rss/(back_stress+Peierls_stress)),expo_kinkeng));
+    kink_energy = min(kink_energy,500 * k_boltzmann * temperature);
+    double arrh_term = exp(kink_energy/(k_boltzmann*temperature));
+    return 1 / freq_const;
 }
 
 double running_time(double rss, double c_drag, double wave_speed, double barrier_distance, double burgers, double back_stress){

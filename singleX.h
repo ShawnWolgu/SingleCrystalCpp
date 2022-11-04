@@ -1,6 +1,7 @@
 #ifndef SINGX
 #define SINGX
 
+#include <cstdlib>
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -28,6 +29,7 @@ extern ofstream stress_file, disloc_file, crss_file, stress_step_file, disloc_st
 extern string sxfile_path, loadfile_path, configure_path;
 extern Matrix6d strain_modi_tensor;
 extern Matrix<double,9,9> bc_modi_matrix, vel_to_dw_matrix;
+extern vector<double> euler_line_input;
 // [classes]
 class Grain;
 class Slip;
@@ -76,12 +78,14 @@ class Slip {
     public:
         Vector3d burgers_vec, plane_norm, plane_norm_disp;
         Matrix3d schmidt;
-        vector<double> harden_params, update_params;
+	int num = -1;
+        vector<double> harden_params, update_params, latent_params;
         double ref_strain_rate = 0.001, rate_sen = m, strain_rate_slip, ddgamma_dtau, shear_modulus, SSD_density, crss, acc_strain, disl_vel;
+	double ref_rate = 0.0;
 	double t_wait = 0.0, t_run = 0.0;
         const double debye_freq = 9.13e13;
         Slip();
-        Slip(Vector6d &slip_info, vector<double> &hardens, Matrix3d lattice_vec);
+        Slip(int slip_num, Vector6d &slip_info, vector<double> &hardens, vector<double> &latents, Matrix3d lattice_vec);
         double cal_rss(Matrix3d stress_tensor);
         Matrix3d dL_tensor();
         Matrix3d dstrain_tensor();
@@ -92,6 +96,7 @@ class Slip {
         void cal_ddgamma_dtau(Matrix3d stress_tensor);
         void cal_shear_modulus(Matrix6d elastic_modulus);
         void update_status(Grain &grain);
+        void update_ssd();
     private:
         void cal_strain_pow(Matrix3d stress_tensor);
         void cal_strain_ddhard(Matrix3d stress_tensor, double strain_rate);
@@ -99,9 +104,9 @@ class Slip {
         void cal_ddgamma_dtau_pow(Matrix3d stress_tensor);
         void cal_ddgamma_dtau_ddhard(Matrix3d stress_tensor);
         void cal_ddgamma_dtau_disvel(Matrix3d stress_tensor);
-        void update_ddhard(vector<Slip> &slip_sys, double bv);
-        void update_disvel(vector<Slip> &slip_sys, double bv);
-        void update_voce(vector<Slip> &slip_sys);
+        void update_ddhard(vector<Slip> &slip_sys, MatrixXd lat_hard_mat, double bv);
+        void update_disvel(vector<Slip> &slip_sys, MatrixXd lat_hard_mat, double bv);
+        void update_voce(vector<Slip> &slip_sys, MatrixXd lat_hard_mat);
         double disl_velocity(double rss);
 };
 
@@ -110,10 +115,11 @@ class Grain{
     public:
         Matrix3d lattice_vec, deform_grad, deform_grad_elas, deform_grad_plas, stress_tensor, strain_tensor, orientation, orient_ref;
         Matrix6d elastic_modulus, elastic_modulus_ref;
+	MatrixXd lat_hard_mat;
         vector<Slip> slip_sys;
         double strain_rate = 1e-3;
         Grain();
-        Grain(Matrix6d elastic_mod, Matrix3d lat_vecs, vector<Slip> s, Matrix3d orient_Mat);
+        Grain(Matrix6d elastic_mod, Matrix3d lat_vecs, vector<Slip> s, MatrixXd latent_matrix, Matrix3d orient_Mat);
         void update_status(Matrix3d L_dt_tensor, Matrix3d vel_grad_flag, Matrix3d stress_incr, Matrix3d dstress_flag);
         void update_status_adaptive(Matrix3d L_dt_tensor, Matrix3d vel_grad_flag, Matrix3d stress_incr, Matrix3d dstress_flag);
         void print_stress_strain(ofstream &os);
