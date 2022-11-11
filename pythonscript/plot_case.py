@@ -17,7 +17,7 @@ def getplot_database(folders,filename,xcol,ycol):
         xlim[0] = min(dfcsv.iloc[0,0],xlim[0])
         xlim[1] = max(dfcsv.iloc[-1,0],xlim[1])
         ylim[0] = min(dfcsv.iloc[0,1],ylim[0])
-        ylim[1] = max(dfcsv.iloc[-1,1],ylim[1])
+        ylim[1] = max(dfcsv.iloc[:,1].max(),ylim[1])
         if ind != 10000:
             database.append({'linedata':dfcsv,'label':ifol})
         else:

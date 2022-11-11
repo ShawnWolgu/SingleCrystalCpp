@@ -64,6 +64,7 @@ void Grain::update_status(Matrix3d vel_bc_tensor, Matrix3d vel_grad_flag, Matrix
     deform_grad_plas = deform_grad_elas.inverse() * deform_grad;
     spin_elas = 0.5 * (vel_grad_elas - vel_grad_elas.transpose());
     orientation = orientation * Rodrigues(spin_elas).transpose(); 
+    for (Slip &slip_component : slip_sys) slip_component.update_cross_slip(slip_sys,stress_tensor);
     for (Slip &slip_component : slip_sys) slip_component.update_ssd();
     for (Slip &slip_component : slip_sys) slip_component.update_status(*this);
 }
@@ -131,6 +132,7 @@ void Grain::update_status_adaptive(Matrix3d vel_bc_tensor, Matrix3d vel_grad_fla
     deform_grad_plas = deform_grad_elas.inverse() * deform_grad;
     spin_elas = 0.5 * (vel_grad_elas - vel_grad_elas.transpose());
     orientation = orientation * Rodrigues(spin_elas).transpose(); 
+    for (Slip &slip_component : slip_sys) slip_component.update_cross_slip(slip_sys,stress_tensor);
     for (Slip &slip_component : slip_sys) slip_component.update_ssd(); 
     for (Slip &slip_component : slip_sys) slip_component.update_status(*this);
     //cout << "-------------------------------------------------------------------" << endl;

@@ -5,7 +5,6 @@ void add_slips(ifstream &is, vector<Slip> &slips, Matrix3d lattice_vecs);
 void vel_grad_modify(char &flag_1, char &flag_2, int compoidx, Matrix3d &vel_grad_tensor);
 void step_config(string in_str);
 int get_interaction_mode(Vector3d burgers_i, Vector3d plane_i, Vector3d burgers_j, Vector3d plane_j);
-double cal_cosine(Vector3d vec_i, Vector3d vec_j);
 MatrixXd latent_hardening_matrix(vector<Slip> &slips);
 Matrix6d read_elastic(ifstream &is);
 Matrix3d read_lattice(ifstream &is);
@@ -184,7 +183,7 @@ void print_harden_law(){
 void add_slips(ifstream &is, vector<Slip> &slips, Matrix3d lattice_vecs){
     string input_line;
     vector<Vector6d> slip_infos;
-    vector<double> harden_params, latent_params;
+    vector<double> harden_params, latent_params, cross_params;
     double temp;
     int slip_num = 0;
 
@@ -208,14 +207,21 @@ void add_slips(ifstream &is, vector<Slip> &slips, Matrix3d lattice_vecs){
     stringstream lat_stream(input_line);
     while(lat_stream >> temp) latent_params.push_back(temp);
 
+    getline(is, input_line);
+    while(input_line[0] == '#')     getline(is, input_line);
+    stringstream cross_stream(input_line);
+    while(cross_stream >> temp) cross_params.push_back(temp);
+
     for(int islip = 0; islip != slip_num; ++islip){
 	int crt_num = slips.size();
-        Slip temp_slip(crt_num, slip_infos[islip], harden_params, latent_params, lattice_vecs);
+        Slip temp_slip(crt_num, slip_infos[islip], harden_params, latent_params, cross_params, lattice_vecs);
 	cout << "Slip No." << crt_num << endl;
         cout << slip_infos[islip].transpose() << endl;
         for (auto i: harden_params) std::cout << i << ' ';
         cout << endl;
         for (auto i: latent_params) std::cout << i << ' ';
+        cout << endl;
+        for (auto i: cross_params) std::cout << i << ' ';
         cout << endl;
         slips.push_back(temp_slip);
     }

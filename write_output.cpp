@@ -103,13 +103,13 @@ void title_output(ofstream &outf, string leads, string subs1, string subs2, int 
 
 // custom output settings:
 void custom_output_initialization(){
-    title_output(custom_output_file, "e11,e22,e33,", "refg", 12);
+    title_output(custom_output_file, "e11,e22,e33,", "cross", 12);
     //custom_output_file << "e11,e22,e33,U11,U12,U13,U21,U22,U23,U31,U32,U33" << endl;
 }
 
 void print_custom(Grain &grain){
     custom_output_file << grain.strain_tensor(0,0) << ',' << grain.strain_tensor(1,1) << ',' << grain.strain_tensor(2,2);// << ',' << grain.slip_sys[4].update_params[0];
     //Matrix3d U = (grain.orientation.transpose() * grain.orient_ref).inverse()*grain.deform_grad_elas;
-    for (Slip &slip_component : grain.slip_sys) custom_output_file << ',' << slip_component.strain_rate_slip;
+    for (Slip &slip_component : grain.slip_sys) custom_output_file << ',' << slip_component.cross_in - slip_component.cross_out;
     custom_output_file << endl;
 }

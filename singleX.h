@@ -54,6 +54,7 @@ void adaptive_step_load_sx(Grain &grain, Matrix3d vel_grad_tensor, Matrix3d vel_
 void flag_to_idx(Matrix<double, 15, 1> flag, vector<int> &known_idx, vector<int> &unknown_idx);
 void params_convert_to_matrix(Matrix<double, 15, 1> &params, Vector6d &unknown_params, vector<int> &unknown_idx, Matrix3d &vel_grad_elas, Matrix3d &stress_incr);
 int sign(double x);
+double cal_cosine(Vector3d vec_i, Vector3d vec_j);
 Vector3d Euler_trans(Matrix3d euler_matrix);
 Vector6d tensor_trans_order(Matrix3d tensor);
 Vector6d get_vec_only_ith(Vector6d &vector_base, int i); 
@@ -79,13 +80,13 @@ class Slip {
         Vector3d burgers_vec, plane_norm, plane_norm_disp;
         Matrix3d schmidt;
 	int num = -1;
-        vector<double> harden_params, update_params, latent_params;
-        double ref_strain_rate = 0.001, rate_sen = m, strain_rate_slip, ddgamma_dtau, shear_modulus, SSD_density, crss, acc_strain, disl_vel;
+        vector<double> harden_params, update_params, latent_params, cross_params;
+        double ref_strain_rate = 0.001, rate_sen = m, strain_rate_slip, ddgamma_dtau, shear_modulus, SSD_density, crss, acc_strain, disl_vel, cross_in = 0.0, cross_out = 0.0;
 	double ref_rate = 0.0;
 	double t_wait = 0.0, t_run = 0.0;
         const double debye_freq = 9.13e13;
         Slip();
-        Slip(int slip_num, Vector6d &slip_info, vector<double> &hardens, vector<double> &latents, Matrix3d lattice_vec);
+        Slip(int slip_num, Vector6d &slip_info, vector<double> &hardens, vector<double> &latents, vector<double> &cross, Matrix3d lattice_vec);
         double cal_rss(Matrix3d stress_tensor);
         Matrix3d dL_tensor();
         Matrix3d dstrain_tensor();
@@ -97,6 +98,7 @@ class Slip {
         void cal_shear_modulus(Matrix6d elastic_modulus);
         void update_status(Grain &grain);
         void update_ssd();
+        void update_cross_slip(vector<Slip> &slip_sys, Matrix3d stress_tensor);
     private:
         void cal_strain_pow(Matrix3d stress_tensor);
         void cal_strain_ddhard(Matrix3d stress_tensor, double strain_rate);
