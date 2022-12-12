@@ -20,6 +20,7 @@ Matrix3d Grain::get_vel_grad_plas(Matrix3d stress_3d){
         slip_component.cal_strain(*this, stress_grain);
 	vel_grad_plas += slip_component.dL_tensor();
     }
+    //cout << "lp_cry : " << tensor_trans_order_9(vel_grad_plas).transpose() << endl;
     return tensor_rot_to_RefCoord(vel_grad_plas, orientation);
 }
 
@@ -123,6 +124,7 @@ void Grain::update_status_adaptive(Matrix3d vel_bc_tensor, Matrix3d vel_grad_fla
     elastic_modulus = rotate_6d_stiff_modu(elastic_modulus_ref,orientation.transpose());
     solve_Lsig_iteration_adaptive(vel_bc_tensor, vel_grad_flag, stress_incr, dstress_flag);
     vel_grad_plas = get_vel_grad_plas(stress_tensor + stress_incr);
+    cut_precision(vel_grad_plas, 5);
     vel_grad_elas = vel_bc_to_vel_grad(vel_bc_tensor*dtime) - vel_grad_plas;
     // end iteration
     stress_tensor = stress_tensor + stress_incr;
@@ -139,6 +141,7 @@ void Grain::update_status_adaptive(Matrix3d vel_bc_tensor, Matrix3d vel_grad_fla
     //cout << "U : " << tensor_trans_order_9((Matrix3d)(orient_ref.transpose() * orientation * deform_grad_elas)).transpose() << endl;
     //cout << "R : " << tensor_trans_order_9((Matrix3d)(orientation.transpose()*orient_ref)).transpose() << endl;
     //cout << "le : " << tensor_trans_order_9(vel_grad_elas).transpose() << endl;
+    //cout << "we : " << tensor_trans_order_9(spin_elas).transpose() << endl;
     //cout << "lp : " << tensor_trans_order_9(vel_grad_plas).transpose() << endl;
     //cout << "l : " << tensor_trans_order_9((Matrix3d)(vel_grad_plas+vel_grad_elas)).transpose() << endl;
 }
@@ -175,7 +178,7 @@ void Grain::solve_Lsig_iteration_adaptive(Matrix3d &vel_bc_tensor, Matrix3d &vel
             unknown_params = x_iter_save + coeff * x_iter_step;
 	    params_convert_to_matrix(params, unknown_params, unknown_idx, L_dt_tensor, stress_incr);
 	    vel_bc_tensor = L_dt_tensor / dtime; ++iter_count;
-        } while ((unknown_params - x_iter_save).norm() > 1e-7 && iter_count < 10);
+        } while (calc_relative_error(unknown_params, x_iter_save) > 1e-7 && iter_count < 10);
         if (abs(y_vec.norm()) > 1e-3){
     	    if (dtime < 1e-20) {cout << "Severe disconvergence!! break!" << endl; exit(0);}
     	    else{
@@ -184,6 +187,8 @@ void Grain::solve_Lsig_iteration_adaptive(Matrix3d &vel_bc_tensor, Matrix3d &vel
     	    }
         }
     } while(abs(y_vec.norm()) > 1e-3);
+    cut_precision(vel_bc_tensor, 5);
+    cut_precision(stress_incr, 5);
     if (abs(y_vec.norm()) > 1e-3){
 	cout << "End-of-step y_vec, coeff = " << endl;
         cout << y_vec.norm() << "  " << coeff << endl;

@@ -53,11 +53,15 @@ void adaptive_step_load_sx(Grain &grain, Matrix3d vel_grad_tensor, Matrix3d vel_
 // [functions]
 void flag_to_idx(Matrix<double, 15, 1> flag, vector<int> &known_idx, vector<int> &unknown_idx);
 void params_convert_to_matrix(Matrix<double, 15, 1> &params, Vector6d &unknown_params, vector<int> &unknown_idx, Matrix3d &vel_grad_elas, Matrix3d &stress_incr);
+void cut_precision(Matrix3d &mat, int prec);
 int sign(double x);
 double cal_cosine(Vector3d vec_i, Vector3d vec_j);
+double set_precision(double num, int prec);
+double calc_relative_error(Vector6d &v1, Vector6d &v2);
 Vector3d Euler_trans(Matrix3d euler_matrix);
 Vector6d tensor_trans_order(Matrix3d tensor);
 Vector6d get_vec_only_ith(Vector6d &vector_base, int i); 
+Vector6d set_precision(Vector6d &num, int prec);
 Matrix3d tensor_trans_order(Vector6d tensor);
 Matrix3d tensor_trans_order_9(Matrix<double,9,1> tensor);
 Matrix3d calc_stress(Matrix3d strain_elastic, Matrix6d elastic_modulus);

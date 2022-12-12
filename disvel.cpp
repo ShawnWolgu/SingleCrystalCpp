@@ -43,6 +43,7 @@ double waiting_time(double rss, double freq_Debye, double c_length, double burge
                     double Peierls_stress, double expo_kinkeng, double temperature_ref){
     rss = rss*MPa_to_Pa, back_stress = back_stress*MPa_to_Pa, Peierls_stress = Peierls_stress*MPa_to_Pa, kink_energy_ref = kink_energy_ref*eV_to_J;
     double freq_const = freq_Debye * pow(burgers,2) * c_length / sqrt(disl_density_for) * Peierls_stress / kink_energy_ref;
+    //double freq_const = 1e13;
     double kink_energy = kink_energy_ref * (1-pow(abs(rss/(back_stress+Peierls_stress)),expo_kinkeng));
     kink_energy = min(kink_energy,500 * k_boltzmann * temperature);
     double arrh_term = exp(kink_energy/(k_boltzmann*temperature));
@@ -105,6 +106,7 @@ vector<double> waiting_time_grad(double rss, double freq_Debye, double c_length,
     /* Return a vector: 0. dtw/dtau, 1. tw. */
     rss = rss* MPa_to_Pa, back_stress = back_stress*MPa_to_Pa, Peierls_stress = Peierls_stress*MPa_to_Pa, kink_energy_ref = kink_energy_ref*eV_to_J;
     double freq_const = freq_Debye * pow(burgers,2) * c_length / sqrt(disl_density_for) * Peierls_stress / kink_energy_ref;
+    //double freq_const = 1e13;
     double kink_energy = kink_energy_ref * (1-pow(abs(rss/(back_stress+Peierls_stress)),expo_kinkeng));
     kink_energy = min(kink_energy,500 * k_boltzmann * temperature);
     double arrh_term = exp(kink_energy/(k_boltzmann*temperature));

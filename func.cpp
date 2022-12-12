@@ -285,3 +285,37 @@ Matrix3d vel_bc_to_vel_grad(Matrix3d vel_bc_tensor){
     w_tensor << 0,d_w_vector(8),d_w_vector(7),-d_w_vector(8),0,d_w_vector(6),-d_w_vector(7),-d_w_vector(6),0;
     return d_tensor + w_tensor;
 }
+
+double set_precision(double num, int prec){
+    if (num == 0) return 0.0;
+    double expo = floor(log10(abs(num)));
+    double result = sign(num) * round(abs(num) * pow(10,-expo + prec -1))/pow(10,-expo + prec -1);
+    return result;
+}
+
+Vector6d set_precision(Vector6d &num, int prec){
+    Vector6d result; result << num;
+    for (auto &inum : result){
+	if (inum != 0){
+    	    double expo = floor(log10(abs(inum)));
+	    inum = sign(inum) * round(abs(inum) * pow(10,-expo + prec -1))/pow(10,-expo + prec -1);
+	}
+    }
+    return result;
+}
+
+void cut_precision(Matrix3d &mat, int prec){
+    double ref_value = mat.cwiseAbs().maxCoeff();
+    if (ref_value != 0){
+	double expo = floor(log10(ref_value)) - prec;
+	mat = round(mat.array() * pow(10,-expo)).matrix() * pow(10,expo);
+    }
+}
+
+double calc_relative_error(Vector6d &v1, Vector6d &v2){
+    Vector6d v_error = (v1 - v2).cwiseAbs();
+    Vector6d inv_v1 = (0.5 * v1 + 0.5 * v2);
+    for (auto &iv : inv_v1) if (iv != 0) iv = 1/iv;
+    double result = (v_error.cwiseProduct(inv_v1)).norm();
+    return result;
+}

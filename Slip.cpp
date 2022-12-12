@@ -120,8 +120,11 @@ void Slip::cal_strain_ddhard(Matrix3d stress_tensor, double strain_rate){
 void Slip::cal_strain_disvel(Matrix3d stress_tensor){
     double burgers = update_params[0];
     double rss_slip = cal_rss(stress_tensor);
+    //cout << num << ":   " << rss_slip << endl;
     disl_vel = disl_velocity(rss_slip);
     strain_rate_slip = abs(SSD_density * burgers * disl_vel) * sign(rss_slip);
+    //strain_rate_slip = abs(disl_vel) * sign(rss_slip);
+    //cout << num << ":   " << strain_rate_slip << endl;
     //if(abs(rss_slip)>10){
     //cout << "rss, back_stress , dgamma : " << rss_slip << "   " << update_params[3] << "   " << strain_rate_slip*dtime << endl;}
 }
@@ -132,6 +135,7 @@ void Slip::update_status(Grain &grain){
      */
     //Update Schmidt here.
     //Vector3d update_bv =  burgers_vec;
+    //Vector3d update_nv =  plane_norm;
     Vector3d update_bv = grain.orientation * grain.deform_grad_elas * grain.orient_ref.transpose() * burgers_vec;
     Vector3d update_nv = grain.orientation * grain.deform_grad_elas.inverse().transpose() * grain.orient_ref.transpose() * plane_norm;
     schmidt = update_bv / update_bv.norm() * update_nv.transpose();
@@ -198,22 +202,23 @@ void Slip::update_ssd(){
 	acc_strain += abs(strain_rate_slip) * dtime;
     }
     if (flag_harden == 2){ 
-	double random_ratio = 0.95 + (rand()%100000)/1.0e6;
     	double c_multi = harden_params[10], c_annih = harden_params[11];
     	SSD_density += (c_multi * sqrt(SSD_density) - c_annih * SSD_density) * abs(strain_rate_slip) * dtime + (cross_in - cross_out) * dtime;
     }
 }
 
 void Slip::update_cross_slip(vector<Slip> &slip_sys, Matrix3d stress_tensor){
-    double burgers = update_params[0], para = 0.98, rss_slip = cal_rss(stress_tensor), back_stress = update_params[3];
-    double nu_cross = cross_params[0], phi = cross_params[1], cross_stress = cross_params[2], volume_cross = cross_params[3]*pow(burgers,3);
-    for(Slip &isys : slip_sys){
-	if ((isys.num != num) && (abs(cal_cosine(isys.burgers_vec,burgers_vec))>para)){
-	   double rss_isys = isys.cal_rss(stress_tensor);
-	   double exp_term_in = (rss_slip - (crss + back_stress))/(k_boltzmann * temperature) * volume_cross;
-	   double exp_term_out = (rss_isys - (isys.crss + isys.update_params[3]))/(k_boltzmann * temperature) * volume_cross;
-	   cross_in += nu_cross * phi * isys.SSD_density * exp(exp_term_in);
-	   cross_out += nu_cross * phi * SSD_density * exp(exp_term_out);
+    if (flag_harden == 2){ 
+    	double burgers = update_params[0], para = 0.98, rss_slip = cal_rss(stress_tensor), back_stress = update_params[3];
+    	double nu_cross = cross_params[0], phi = cross_params[1], cross_stress = cross_params[2], volume_cross = cross_params[3]*pow(burgers,3);
+    	for(Slip &isys : slip_sys){
+	   if ((isys.num != num) && (abs(cal_cosine(isys.burgers_vec,burgers_vec))>para)){
+	   	double rss_isys = isys.cal_rss(stress_tensor);
+	   	double exp_term_in = (rss_slip - (crss + back_stress))/(k_boltzmann * temperature) * volume_cross;
+	   	double exp_term_out = (rss_isys - (isys.crss + isys.update_params[3]))/(k_boltzmann * temperature) * volume_cross;
+	   	cross_in += nu_cross * phi * isys.SSD_density * exp(exp_term_in);
+	   	cross_out += nu_cross * phi * SSD_density * exp(exp_term_out);
+	   }
 	}
     }
 }
@@ -298,6 +303,8 @@ void Slip::cal_ddgamma_dtau_disvel(Matrix3d stress_tensor){
     double burgers = update_params[0];
     double rss_slip = cal_rss(stress_tensor);
     vector<double> dvel_and_vel = disl_velocity_grad(rss_slip, harden_params, update_params);
+    //ddgamma_dtau = dvel_and_vel[0] * sign(rss_slip);
+    //strain_rate_slip = dvel_and_vel[1] * sign(rss_slip);
     ddgamma_dtau = SSD_density * burgers * sign(rss_slip) * dvel_and_vel[0];
     strain_rate_slip = SSD_density * burgers * dvel_and_vel[1] * sign(rss_slip);
 }
