@@ -183,7 +183,7 @@ void print_harden_law(){
 void add_slips(ifstream &is, vector<Slip> &slips, Matrix3d lattice_vecs){
     string input_line;
     vector<Vector6d> slip_infos;
-    vector<double> harden_params, latent_params, cross_params;
+    vector<double> harden_params, latent_params, surf_params;
     double temp;
     int slip_num = 0;
 
@@ -209,19 +209,19 @@ void add_slips(ifstream &is, vector<Slip> &slips, Matrix3d lattice_vecs){
 
     getline(is, input_line);
     while(input_line[0] == '#')     getline(is, input_line);
-    stringstream cross_stream(input_line);
-    while(cross_stream >> temp) cross_params.push_back(temp);
+    stringstream surf_stream(input_line);
+    while(surf_stream >> temp) surf_params.push_back(temp);
 
     for(int islip = 0; islip != slip_num; ++islip){
 	int crt_num = slips.size();
-        Slip temp_slip(crt_num, slip_infos[islip], harden_params, latent_params, cross_params, lattice_vecs);
+        Slip temp_slip(crt_num, slip_infos[islip], harden_params, latent_params, surf_params, lattice_vecs);
 	cout << "Slip No." << crt_num << endl;
         cout << slip_infos[islip].transpose() << endl;
         for (auto i: harden_params) std::cout << i << ' ';
         cout << endl;
         for (auto i: latent_params) std::cout << i << ' ';
         cout << endl;
-        for (auto i: cross_params) std::cout << i << ' ';
+        for (auto i: surf_params) std::cout << i << ' ';
         cout << endl;
         slips.push_back(temp_slip);
     }

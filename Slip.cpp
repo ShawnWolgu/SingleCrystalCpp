@@ -2,9 +2,9 @@
 
 Slip::Slip() = default;
 
-Slip::Slip(int number, Vector6d &slip_info, vector<double> &hardens, vector<double> &latents, vector<double> &cross, Matrix3d lattice_vec) {
+Slip::Slip(int number, Vector6d &slip_info, vector<double> &hardens, vector<double> &latents, vector<double> &surf, Matrix3d lattice_vec) {
     num = number;
-    harden_params = hardens; latent_params = latents; cross_params = cross;
+    harden_params = hardens; latent_params = latents; surf_params = surf;
     for (int temp_idx=0; temp_idx<6; ++temp_idx){
         if (temp_idx < 3) plane_norm_disp(temp_idx) = slip_info(temp_idx);
         else {
@@ -203,7 +203,7 @@ void Slip::update_ssd(){
     }
     if (flag_harden == 2){ 
     	double c_multi = harden_params[10], c_annih = harden_params[11];
-    	SSD_density += (c_multi * sqrt(SSD_density) - c_annih * SSD_density) * abs(strain_rate_slip) * dtime + (cross_in - cross_out) * dtime;
+    	SSD_density += (c_multi * sqrt(SSD_density) - c_annih * SSD_density) * abs(strain_rate_slip) * dtime + (dSSD_surface) * dtime;
     }
 }
 
@@ -220,6 +220,18 @@ void Slip::update_cross_slip(vector<Slip> &slip_sys, Matrix3d stress_tensor){
 	   	cross_out += nu_cross * phi * SSD_density * exp(exp_term_out);
 	   }
 	}
+    }
+}
+
+void Slip::update_surface_nuc(Matrix3d stress_tensor){
+    if (flag_harden == 2){ 
+    	double burgers = update_params[0], rss_slip = cal_rss(stress_tensor), back_stress = update_params[3], expo_alpha = harden_params[6];
+    	double energy_nuc = surf_params[0] * eV_to_J, c_tau = surf_params[1], freq_surfnuc = surf_params[2], distance_plane = surf_params[3] * 1e-10, grain_diameter = surf_params[4], shape_param = surf_params[5];
+	double ssd_sat = pow((harden_params[10]/harden_params[11]),2);
+	double ssd_term = pow((1-SSD_density/ssd_sat),3);
+	double exp_term = energy_nuc * (1-pow(abs(rss_slip/(back_stress*c_tau)),expo_alpha));
+	exp_term = min(exp_term,500*k_boltzmann*temperature);
+	dSSD_surface = ssd_term * shape_param / (distance_plane * grain_diameter) * freq_surfnuc * exp(-exp_term/(k_boltzmann*temperature));
     }
 }
 

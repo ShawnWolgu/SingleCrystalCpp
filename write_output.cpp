@@ -113,9 +113,9 @@ void custom_output_initialization(){
 }
 
 void custom_output_initialization(Grain &grain){
-    //title_output(custom_output_file, "e11,e22,e33,", "rate", 12);
+    title_output(custom_output_file, "e11,e22,e33,", "surf", 12);
     //custom_output_file << "e11,e22,e33,U11,U12,U13,U21,U22,U23,U31,U32,U33" << endl;
-    custom_output_file << "e11,e22,e33,std_ssd,std_b,std_rate" << endl;
+    //custom_output_file << "e11,e22,e33,std_ssd,std_b,std_rate" << endl;
     print_custom(grain);
 }
 
@@ -124,15 +124,9 @@ void print_custom(Grain &grain){
     //Matrix3d U = (grain.orientation.transpose() * grain.orient_ref).inverse()*grain.deform_grad_elas;
     vector<double> ssd, bb, rate;
     for (Slip &slip_component : grain.slip_sys) {
-	ssd.push_back(slip_component.SSD_density);
-	bb.push_back(slip_component.harden_params[0]);
-	rate.push_back(slip_component.strain_rate_slip);
-	//custom_output_file << ',' << slip_component.strain_rate_slip;// cross_in - slip_component.cross_out;
+	custom_output_file << ',' << slip_component.dSSD_surface * dtime;// cross_in - slip_component.cross_out;
     }
-    double ssd_std = cal_std_013467910(ssd);
-    double bb_std = cal_std_013467910(bb);
-    double rate_std = cal_std_013467910(rate); 
-    custom_output_file << ',' << ssd_std << ',' << bb_std << ',' << rate_std << endl;
+    custom_output_file << endl;
 }
 
 double cal_std_013467910(vector<double> vd){
