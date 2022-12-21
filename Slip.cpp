@@ -29,6 +29,7 @@ Slip::Slip(int number, Vector6d &slip_info, vector<double> &hardens, vector<doub
         update_params[0] = harden_params[2]; // substructure dislocation density
         break;
     case 2:
+	crss = harden_params[5];
         update_params = {0,0,0,0,0,0,0};
         SSD_density = harden_params[0];
         break;
@@ -250,7 +251,7 @@ void Slip::update_disvel(vector<Slip> &slip_sys, MatrixXd lat_hard_mat, double b
      * 0: nu_cross, 1: phi, 2: cross_stress, 3: c_volume_cross
      */
     double Peierls_stress = harden_params[5], c_backstress = harden_params[9], HP_stress = harden_params[12];
-    double burgers, disl_density_for, disl_density_resist, back_stress, barrier_distance, cosine_n_m;
+    double burgers, disl_density_for, disl_density_resist, back_stress, barrier_distance, cosine_n_m, ref_strain;
     disl_density_for = disl_density_resist = 0;
     for(Slip &isys : slip_sys){
 	Vector3d t_vector = isys.plane_norm.cross(isys.burgers_vec);
@@ -258,13 +259,12 @@ void Slip::update_disvel(vector<Slip> &slip_sys, MatrixXd lat_hard_mat, double b
         disl_density_for += isys.SSD_density;// * abs(cosine_n_m);
         disl_density_resist += isys.SSD_density * lat_hard_mat(num,isys.num);// * sqrt(1-cosine_n_m*cosine_n_m);
     }
-    
-    //disl_density_para = SSD_density;
     burgers = bv_norm * 1e-10;
     //burgers = burgers_vec.norm() * 1e-10;
-    //if (abs(strain_rate_slip)>1e-15) cout << num << '\t' << burgers << '\t' << disl_density_resist << '\t' << strain_rate_slip << '\t' << endl;
+    ref_strain = burgers * SSD_density / (2 * sqrt(disl_density_resist));
     back_stress = c_backstress * shear_modulus * burgers * sqrt(disl_density_resist) + HP_stress;
-    crss = Peierls_stress + back_stress; 
+    double crss_norm = crss/back_stress;
+    crss += strain_rate_slip * (back_stress/ref_strain) * pow(crss_norm,3) * (cosh(pow(crss_norm,-2))-1);
     barrier_distance = plane_norm_disp.cross(burgers_vec).norm() * 1e-10;
     acc_strain += abs(strain_rate_slip) * dtime;
     //cout << strain_rate_slip << endl;
