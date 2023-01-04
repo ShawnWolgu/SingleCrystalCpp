@@ -70,6 +70,9 @@ void substep_output(Grain &grain){
     grain.print_stress_strain(stress_step_file);
     grain.print_dislocation(disloc_step_file);
     if (flag_harden == 2) grain.print_time(time_step_file);
+    grain.print_crss(crss_file);
+    grain.print_disvel(disvel_file);
+    grain.print_schmidt(schmidt_file);
     print_custom(grain);
 }
 
@@ -122,9 +125,8 @@ void custom_output_initialization(Grain &grain){
 void print_custom(Grain &grain){
     custom_output_file << grain.strain_tensor(0,0) << ',' << grain.strain_tensor(1,1) << ',' << grain.strain_tensor(2,2);// << ',' << grain.slip_sys[4].update_params[0];
     //Matrix3d U = (grain.orientation.transpose() * grain.orient_ref).inverse()*grain.deform_grad_elas;
-    vector<double> ssd, bb, rate;
     for (Slip &slip_component : grain.slip_sys) {
-	custom_output_file << ',' << slip_component.dSSD_surface * dtime;// cross_in - slip_component.cross_out;
+	custom_output_file << ',' << slip_component.crss / slip_component.update_params[3];// cross_in - slip_component.cross_out;
     }
     custom_output_file << endl;
 }

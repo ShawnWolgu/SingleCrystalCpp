@@ -121,13 +121,9 @@ void Slip::cal_strain_ddhard(Matrix3d stress_tensor, double strain_rate){
 void Slip::cal_strain_disvel(Matrix3d stress_tensor){
     double burgers = update_params[0];
     double rss_slip = cal_rss(stress_tensor);
-    //cout << num << ":   " << rss_slip << endl;
     disl_vel = disl_velocity(rss_slip);
     strain_rate_slip = abs(SSD_density * burgers * disl_vel) * sign(rss_slip);
     //strain_rate_slip = abs(disl_vel) * sign(rss_slip);
-    //cout << num << ":   " << strain_rate_slip << endl;
-    //if(abs(rss_slip)>10){
-    //cout << "rss, back_stress , dgamma : " << rss_slip << "   " << update_params[3] << "   " << strain_rate_slip*dtime << endl;}
 }
 
 void Slip::update_status(Grain &grain){
@@ -261,10 +257,19 @@ void Slip::update_disvel(vector<Slip> &slip_sys, MatrixXd lat_hard_mat, double b
     }
     burgers = bv_norm * 1e-10;
     //burgers = burgers_vec.norm() * 1e-10;
-    ref_strain = burgers * SSD_density / (2 * sqrt(disl_density_resist));
-    back_stress = c_backstress * shear_modulus * burgers * sqrt(disl_density_resist) + HP_stress;
-    double crss_norm = crss/back_stress;
-    crss += strain_rate_slip * (back_stress/ref_strain) * pow(crss_norm,3) * (cosh(pow(crss_norm,-2))-1);
+    ref_strain = burgers * SSD_density / (2 * sqrt(disl_density_for));
+    back_stress = c_backstress * shear_modulus * burgers * sqrt(disl_density_resist);// + HP_stress
+    //CRSS iteration:
+    double crss_0 = crss, f_g = 0, f_g_grad = 0, crss_norm = crss/back_stress, dg = 0;
+    do{
+	f_g = crss_0 - crss + abs(strain_rate_slip) * (0.01*back_stress/ref_strain) * pow(crss_norm,3) * (cosh(pow(crss_norm,-2))-1) * dtime;
+	f_g_grad = -1 + 0.01*back_stress/ref_strain*abs(strain_rate_slip)*dtime*(3*pow(crss,2)/pow(back_stress,3)*(cosh(pow(crss_norm,-2))-1)-pow(crss_norm,3)*sinh(pow(crss_norm,-2))*2*back_stress/pow(crss,2));
+	if (dg*f_g/f_g_grad <= 0) dg = -f_g/f_g_grad;
+	else dg = -0.5 *dg;
+	crss += dg;
+	crss_norm = crss/back_stress;
+    } while(abs(f_g)>1e-1 && abs(dg)<1e-3);
+    //crss += abs(strain_rate_slip) * (0.01 * back_stress/ref_strain) * pow(crss_norm,3) * (cosh(pow(crss_norm,-2))-1) * dtime;
     barrier_distance = plane_norm_disp.cross(burgers_vec).norm() * 1e-10;
     acc_strain += abs(strain_rate_slip) * dtime;
     //cout << strain_rate_slip << endl;
@@ -314,7 +319,7 @@ void Slip::cal_ddgamma_dtau_ddhard(Matrix3d stress_tensor){
 void Slip::cal_ddgamma_dtau_disvel(Matrix3d stress_tensor){
     double burgers = update_params[0];
     double rss_slip = cal_rss(stress_tensor);
-    vector<double> dvel_and_vel = disl_velocity_grad(rss_slip, harden_params, update_params);
+    vector<double> dvel_and_vel = disl_velocity_grad(rss_slip, crss, harden_params, update_params);
     //ddgamma_dtau = dvel_and_vel[0] * sign(rss_slip);
     //strain_rate_slip = dvel_and_vel[1] * sign(rss_slip);
     ddgamma_dtau = SSD_density * burgers * sign(rss_slip) * dvel_and_vel[0];

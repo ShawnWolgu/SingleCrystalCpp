@@ -76,7 +76,7 @@ Matrix<double,9,1> tensor_trans_order_9(Matrix3d tensor);
 Matrix<double,9,1> vel_to_dw(Matrix3d tensor);
 
 // [dislocation velocity model]
-vector<double> disl_velocity_grad(double rss, vector<double> harden_params, vector<double> update_params);
+vector<double> disl_velocity_grad(double rss, double crss, vector<double> harden_params, vector<double> update_params);
 
 // [class members]
 class Slip {
