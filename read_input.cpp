@@ -53,7 +53,10 @@ Grain read_grain(){
     while (!input_file.eof())
     {
         getline(input_file, input_line);
-        if(input_line[0] == '#'){
+        if(input_line.find("//") != input_line.npos){
+	    continue;
+	}
+        if(input_line.find("#") != input_line.npos){
             if((input_line.find("Elastic") != input_line.npos) || (input_line.find("elastic") != input_line.npos)) {
                 elastic_modulus = read_elastic(input_file);
                 continue;

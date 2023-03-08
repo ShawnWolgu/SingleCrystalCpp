@@ -85,7 +85,7 @@ class Slip {
         Matrix3d schmidt;
 	int num = -1;
         vector<double> harden_params, update_params, latent_params, cross_params, surf_params;
-        double ref_strain_rate = 0.001, rate_sen = m, strain_rate_slip, ddgamma_dtau, shear_modulus, SSD_density, crss, acc_strain, disl_vel, cross_in = 0.0, cross_out = 0.0, dSSD_surface = 0.0;
+        double ref_strain_rate = 0.001, rate_sen = m, strain_rate_slip, ddgamma_dtau, shear_modulus, SSD_density, crss, acc_strain, disl_vel, cross_in = 0.0, cross_out = 0.0, dSSD_surface = 0.0, rho_sat = 0.0, lh_coeff = 1.0;
 	double ref_rate = 0.0;
 	double t_wait = 0.0, t_run = 0.0;
         const double debye_freq = 9.13e13;
@@ -101,7 +101,8 @@ class Slip {
         void cal_ddgamma_dtau(Matrix3d stress_tensor);
         void cal_shear_modulus(Matrix6d elastic_modulus);
         void update_status(Grain &grain);
-        void update_ssd();
+        void update_ssd(Matrix3d dstrain);
+        void update_lhparams(Matrix3d dstrain);
         void update_cross_slip(vector<Slip> &slip_sys, Matrix3d stress_tensor);
         void update_surface_nuc(Matrix3d stress_tensor);
     private:

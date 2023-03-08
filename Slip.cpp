@@ -194,14 +194,34 @@ void Slip::update_ddhard(vector<Slip> &slip_sys, MatrixXd lat_hard_mat, double b
     update_params[0] = subs_density, update_params[1] = burgers; 
 }
 
-void Slip::update_ssd(){
+void Slip::update_ssd(Matrix3d dstrain){
     if (flag_harden == 0 || flag_harden == 1){
 	acc_strain += abs(strain_rate_slip) * dtime;
     }
     if (flag_harden == 2){ 
-    	double c_multi = harden_params[10], c_annih = harden_params[11];
-    	SSD_density += (c_multi * sqrt(SSD_density) - c_annih * SSD_density) * abs(strain_rate_slip) * dtime + (dSSD_surface) * dtime;
+    	double c_backstress = harden_params[9], c_multi = harden_params[10], c_annih = harden_params[11], burgers = update_params[0];
+	double D = 1781.4 * 1e6, ref_srate = 1e7, gg = 0.024;
+	//rho_sat = abs(cal_rss(dstrain))/dtime/(burgers * (disl_velocity(crss)+1e-10));
+	//rho_sat = pow(cal_rss(stress_tensor)/(harden_params[9]*shear_modulus*burgers),2);
+	//rho_sat = 2e15 * pow(abs(cal_rss(dstrain))/dtime/(3e-1),0.15);
+	rho_sat = c_backstress * burgers / gg * (1-k_boltzmann * temperature/D/pow(burgers,3) * log(abs(cal_rss(dstrain))/dtime/ref_srate));
+	rho_sat = pow(1/rho_sat,2);
+	rho_sat = max(rho_sat, 0.5*SSD_density);
+	c_annih = sqrt(c_multi*c_multi/rho_sat);
+	//cout << SSD_density << ',' << rho_sat << endl;
+    	SSD_density += (c_multi * sqrt(SSD_density) - c_annih * SSD_density) * abs(strain_rate_slip) * dtime;// + (dSSD_surface) * dtime;
+	harden_params[11] = c_annih;
     }
+}
+
+void Slip::update_lhparams(Matrix3d dstrain){
+    if (flag_harden == 2){ 
+    	double c_backstress = harden_params[9], c_multi = harden_params[10], c_annih = harden_params[11], burgers = update_params[0];
+	double ref_srate = 1e-3, exp_lh = -0.1;
+	lh_coeff = pow((abs(cal_rss(dstrain))/dtime / ref_srate), exp_lh);
+	if (lh_coeff > 2) lh_coeff = 2;
+    }
+    else{}
 }
 
 void Slip::update_cross_slip(vector<Slip> &slip_sys, Matrix3d stress_tensor){
@@ -246,14 +266,14 @@ void Slip::update_disvel(vector<Slip> &slip_sys, MatrixXd lat_hard_mat, double b
      * cross slip parameters:
      * 0: nu_cross, 1: phi, 2: cross_stress, 3: c_volume_cross
      */
-    double Peierls_stress = harden_params[5], c_backstress = harden_params[9], HP_stress = harden_params[12];
+    double Peierls_stress = harden_params[5], c_backstress = harden_params[9], HP_stress = 0 ;//harden_params[12];
     double burgers, disl_density_for, disl_density_resist, back_stress, barrier_distance, cosine_n_m, ref_strain;
     disl_density_for = disl_density_resist = 0;
     for(Slip &isys : slip_sys){
 	Vector3d t_vector = isys.plane_norm.cross(isys.burgers_vec);
         cosine_n_m =  plane_norm.transpose() * (t_vector / t_vector.norm());
         disl_density_for += isys.SSD_density;// * abs(cosine_n_m);
-        disl_density_resist += isys.SSD_density * lat_hard_mat(num,isys.num);// * sqrt(1-cosine_n_m*cosine_n_m);
+        disl_density_resist += isys.SSD_density * ((lat_hard_mat(num,isys.num)-1) * lh_coeff + 1);// * sqrt(1-cosine_n_m*cosine_n_m);
     }
     burgers = bv_norm * 1e-10;
     //burgers = burgers_vec.norm() * 1e-10;
@@ -270,6 +290,7 @@ void Slip::update_disvel(vector<Slip> &slip_sys, MatrixXd lat_hard_mat, double b
 	crss_norm = crss/back_stress;
     } while(abs(f_g)>1e-1 && abs(dg)<1e-3);
     //crss += abs(strain_rate_slip) * (0.01 * back_stress/ref_strain) * pow(crss_norm,3) * (cosh(pow(crss_norm,-2))-1) * dtime;
+    crss = back_stress + Peierls_stress;
     barrier_distance = plane_norm_disp.cross(burgers_vec).norm() * 1e-10;
     acc_strain += abs(strain_rate_slip) * dtime;
     //cout << strain_rate_slip << endl;
