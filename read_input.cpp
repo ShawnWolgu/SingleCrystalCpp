@@ -186,7 +186,7 @@ void print_harden_law(){
 void add_slips(ifstream &is, vector<Slip> &slips, Matrix3d lattice_vecs){
     string input_line;
     vector<Vector6d> slip_infos;
-    vector<double> harden_params, latent_params, surf_params;
+    vector<double> harden_params, latent_params, surf_params, active_frac;
     double temp;
     int slip_num = 0;
 
@@ -196,10 +196,13 @@ void add_slips(ifstream &is, vector<Slip> &slips, Matrix3d lattice_vecs){
     for(int islip = 0; islip != slip_num; ++islip){
         getline(is, input_line);
         stringstream stream(input_line);
-        Vector6d p_b;
+        Vector6d p_b;  double frac_active = 1.; 
         stream >> p_b(0) >> p_b(1) >> p_b(2) >> p_b(3) >> p_b(4) >> p_b(5);
+	if (stream.rdbuf()->in_avail() > 0 && stream >> frac_active) {} 
         slip_infos.push_back(p_b);
+	active_frac.push_back(frac_active);
     }
+
     getline(is, input_line);
     while(input_line[0] == '#')     getline(is, input_line);
     stringstream stream(input_line);
@@ -210,21 +213,14 @@ void add_slips(ifstream &is, vector<Slip> &slips, Matrix3d lattice_vecs){
     stringstream lat_stream(input_line);
     while(lat_stream >> temp) latent_params.push_back(temp);
 
-    getline(is, input_line);
-    while(input_line[0] == '#')     getline(is, input_line);
-    stringstream surf_stream(input_line);
-    while(surf_stream >> temp) surf_params.push_back(temp);
-
     for(int islip = 0; islip != slip_num; ++islip){
 	int crt_num = slips.size();
-        Slip temp_slip(crt_num, slip_infos[islip], harden_params, latent_params, surf_params, lattice_vecs);
+        Slip temp_slip(crt_num, slip_infos[islip], harden_params, latent_params, lattice_vecs, active_frac[islip]);
 	cout << "Slip No." << crt_num << endl;
         cout << slip_infos[islip].transpose() << endl;
         for (auto i: harden_params) std::cout << i << ' ';
         cout << endl;
         for (auto i: latent_params) std::cout << i << ' ';
-        cout << endl;
-        for (auto i: surf_params) std::cout << i << ' ';
         cout << endl;
         slips.push_back(temp_slip);
     }
@@ -280,7 +276,7 @@ void read_load(Matrix3d &vel_grad_tensor, Matrix3d &vel_grad_flag, Matrix3d &str
     }
     string step_conf_string;
     getline(load_file, step_conf_string);
-    // args: 1: timestep, 2: substep, 3: max_strain
+    // args: 1: timestep, 2: substep, 3: max_strain, 4: temperature
     step_config(step_conf_string);
     cout << "Step configured." << endl;
     vel_grad_tensor = load_matrix_input(load_file);
@@ -429,13 +425,14 @@ Matrix3d load_matrix_input(ifstream &load_file){
 
 void step_config(string in_str){
     stringstream stream(in_str);
-    double temp[3]={0,0,0};
+    double temp[4]={0,0,0,0};
     int temp_idx = 0;
     while (!stream.eof()) stream >> temp[temp_idx++];
 
     if (timestep == 0){ if(temp[0]!=0) timestep = temp[0]; else timestep = 0.001; }
     if (substep == 0){ if(temp[1]!=0) substep = temp[1]; else substep = 0.001; }
     if (max_strain == 0){ if(temp[2]!=0) max_strain = temp[2]; else max_strain = 0.2; }
+    if (temperature == 298){ if(temp[3]!=0) temperature = temp[3]; else temperature = 298; }
     dtime = substep*timestep;
 }
 

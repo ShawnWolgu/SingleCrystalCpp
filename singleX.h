@@ -55,9 +55,12 @@ void flag_to_idx(Matrix<double, 15, 1> flag, vector<int> &known_idx, vector<int>
 void params_convert_to_matrix(Matrix<double, 15, 1> &params, Vector6d &unknown_params, vector<int> &unknown_idx, Matrix3d &vel_grad_elas, Matrix3d &stress_incr);
 void cut_precision(Matrix3d &mat, int prec);
 int sign(double x);
+int heaviside(double x);
 double cal_cosine(Vector3d vec_i, Vector3d vec_j);
 double set_precision(double num, int prec);
 double calc_relative_error(Vector6d &v1, Vector6d &v2);
+double calc_relative_error(double x, double y);
+double calc_equivalent_value(Matrix3d mat);
 Vector3d Euler_trans(Matrix3d euler_matrix);
 Vector6d tensor_trans_order(Matrix3d tensor);
 Vector6d get_vec_only_ith(Vector6d &vector_base, int i); 
@@ -83,14 +86,14 @@ class Slip {
     public:
         Vector3d burgers_vec, plane_norm, plane_norm_disp;
         Matrix3d schmidt;
-	int num = -1;
+	int num = -1; bool flag_active;
         vector<double> harden_params, update_params, latent_params, cross_params, surf_params;
         double ref_strain_rate = 0.001, rate_sen = m, strain_rate_slip, ddgamma_dtau, shear_modulus, SSD_density, crss, acc_strain, disl_vel, cross_in = 0.0, cross_out = 0.0, dSSD_surface = 0.0, rho_sat = 0.0, lh_coeff = 1.0;
-	double ref_rate = 0.0;
+	double ref_rate = 0.0, rho_mov = 0.0, crss_factor = 0.0, rho_init=0.0;
 	double t_wait = 0.0, t_run = 0.0;
         const double debye_freq = 9.13e13;
         Slip();
-        Slip(int slip_num, Vector6d &slip_info, vector<double> &hardens, vector<double> &latents, vector<double> &surf, Matrix3d lattice_vec);
+        Slip(int slip_num, Vector6d &slip_info, vector<double> &hardens, vector<double> &latents, Matrix3d lattice_vec, double f_active);
         double cal_rss(Matrix3d stress_tensor);
         Matrix3d dL_tensor();
         Matrix3d dstrain_tensor();
@@ -104,6 +107,7 @@ class Slip {
         void update_ssd(Matrix3d dstrain);
         void update_lhparams(Matrix3d dstrain);
         void update_cross_slip(vector<Slip> &slip_sys, Matrix3d stress_tensor);
+        void update_rho_mov(vector<Slip> &slip_sys);
         void update_surface_nuc(Matrix3d stress_tensor);
     private:
         void cal_strain_pow(Matrix3d stress_tensor);

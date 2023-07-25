@@ -1,4 +1,5 @@
 #include "singleX.h"
+#include <Eigen/Eigenvalues>
 
 Matrix6d cal_rotation_trans_6d_for_stiff(Matrix3d M);
 Matrix6d cal_rotation_trans_6d_for_compl(Matrix3d M);
@@ -278,6 +279,10 @@ int sign(double x){
     return (0 < x) - (x < 0);
 }
 
+int heaviside(double x){
+    return (x > 0);
+}
+
 Matrix3d vel_bc_to_vel_grad(Matrix3d vel_bc_tensor){
     Matrix<double,9,1> d_w_vector = bc_modi_matrix * tensor_trans_order_9(vel_bc_tensor);
     Matrix3d d_tensor = tensor_trans_order((Vector6d)d_w_vector(Eigen::seq(0,5)));
@@ -291,6 +296,12 @@ double set_precision(double num, int prec){
     double expo = floor(log10(abs(num)));
     double result = sign(num) * round(abs(num) * pow(10,-expo + prec -1))/pow(10,-expo + prec -1);
     return result;
+}
+
+double calc_equivalent_value(Matrix3d mat){
+    Matrix3d dev_mat = mat - Matrix3d::Identity() * mat.trace();
+    double sum = (dev_mat.cwiseProduct(dev_mat)).sum();
+    return sqrt(2./3. * sum);
 }
 
 Vector6d set_precision(Vector6d &num, int prec){
@@ -319,3 +330,9 @@ double calc_relative_error(Vector6d &v1, Vector6d &v2){
     double result = (v_error.cwiseProduct(inv_v1)).norm();
     return result;
 }
+
+double calc_relative_error(double x, double y){
+    if (x == 0 && y == 0) return 0;
+    else return abs(x)-abs(y)/abs(x);
+}
+
