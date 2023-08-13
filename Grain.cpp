@@ -67,7 +67,7 @@ void Grain::update_status(Matrix3d vel_bc_tensor, Matrix3d vel_grad_flag, Matrix
     deform_grad_plas = deform_grad_elas.inverse() * deform_grad;
     spin_elas = 0.5 * (vel_grad_elas - vel_grad_elas.transpose());
     orientation = orientation * Rodrigues(spin_elas).transpose(); 
-    for (Slip &slip_component : slip_sys) slip_component.update_ssd(dstrain);
+    for (Slip &slip_component : slip_sys) slip_component.update_ssd(dstrain, orientation);
     for (Slip &slip_component : slip_sys) slip_component.update_status(*this);
 }
 
@@ -137,7 +137,7 @@ void Grain::update_status_adaptive(Matrix3d vel_bc_tensor, Matrix3d vel_grad_fla
     deform_grad_plas = deform_grad_elas.inverse() * deform_grad;
     spin_elas = 0.5 * (vel_grad_elas - vel_grad_elas.transpose());
     orientation = orientation * Rodrigues(spin_elas).transpose(); 
-    for (Slip &slip_component : slip_sys) slip_component.update_ssd(dstrain); 
+    for (Slip &slip_component : slip_sys) slip_component.update_ssd(dstrain,orientation); 
     //for (Slip &slip_component : slip_sys) slip_component.update_rho_mov(slip_sys); 
     //for (Slip &slip_component : slip_sys) slip_component.update_lhparams(dstrain); 
     for (Slip &slip_component : slip_sys) slip_component.update_status(*this);
@@ -164,57 +164,61 @@ void Grain::solve_Lsig_iteration_adaptive(Matrix3d &vel_bc_tensor, Matrix3d &vel
     double coeff = 1; int iter_count = 0;
 
     do{
-	coeff = 1;	y_vec = Vector6d::Zero(); iter_count = 0;
-   	Vector6d x_iter_save = Vector6d::Zero(), x_iter_step = Vector6d::Zero(), y_vec_last = Vector6d::Zero();
-	L_dt_tensor = vel_bc_tensor * dtime;
-   	Matrix<double,6,15> dfx_matrix;
+        coeff = 1;	y_vec = Vector6d::Zero(); iter_count = 0;
+        Vector6d x_iter_save = Vector6d::Zero(), x_iter_step = Vector6d::Zero(), y_vec_last = Vector6d::Zero();
+        L_dt_tensor = vel_bc_tensor * dtime;
+        Matrix<double,6,15> dfx_matrix;
+
+        // Start Newton-Raphson iteration
         do{
             x_iter_save = unknown_params;
             y_vec = calc_fx(L_dt_tensor, stress_incr);
-	    dfx_matrix = calc_dfx(L_dt_tensor, stress_incr);
-	    x_iter_step = -dfx_matrix(all,unknown_idx).inverse()*y_vec;
-	    y_vec_last = y_vec;
+            dfx_matrix = calc_dfx(L_dt_tensor, stress_incr);
+            x_iter_step = -dfx_matrix(all,unknown_idx).inverse()*y_vec;
+            y_vec_last = y_vec;
             unknown_params = x_iter_save + coeff * x_iter_step;
-	    params_convert_to_matrix(params, unknown_params, unknown_idx, L_dt_tensor, stress_incr);
-	    vel_bc_tensor = L_dt_tensor / dtime; ++iter_count;
+            params_convert_to_matrix(params, unknown_params, unknown_idx, L_dt_tensor, stress_incr);
+            vel_bc_tensor = L_dt_tensor / dtime; ++iter_count;
         } while (calc_relative_error(unknown_params, x_iter_save) > 1e-7 && iter_count < 5);
+        // End Newton-Raphson iteration
+        
         if (abs(y_vec.norm()) > 1e-3){
-	//cout << "----------------------------------" << endl;
-	iter_count = 0;
-	Vector6d step_last = x_iter_step;
-        do{
-            x_iter_save = unknown_params;
-            y_vec = calc_fx(L_dt_tensor, stress_incr);
-	    dfx_matrix = calc_dfx(L_dt_tensor, stress_incr);
-	    x_iter_step = -dfx_matrix(all,unknown_idx).inverse()*y_vec;
-	    if (y_vec_last.norm() < y_vec.norm()){
-		unknown_params = x_iter_save - 0.5*step_last;
-		step_last = 0.5*step_last;
-		--iter_count;
-	    }
-	    else{
-	        unknown_params = x_iter_save + x_iter_step;
-		step_last = x_iter_step;
-	    	y_vec_last = y_vec;
-	    }
-	    //cout << "y: " << y_vec_last.norm() << endl;
-	    params_convert_to_matrix(params, unknown_params, unknown_idx, L_dt_tensor, stress_incr);
-	    vel_bc_tensor = L_dt_tensor / dtime; ++iter_count;
-        } while (calc_relative_error(unknown_params, x_iter_save) > 1e-7 && iter_count < 40);
-	//cout << "----------------------------------" << endl;
-	}
+            iter_count = 0;
+            Vector6d step_last = x_iter_step;
+            do{
+                x_iter_save = unknown_params;
+                y_vec = calc_fx(L_dt_tensor, stress_incr);
+                dfx_matrix = calc_dfx(L_dt_tensor, stress_incr);
+                x_iter_step = -dfx_matrix(all,unknown_idx).inverse()*y_vec;
+                if (y_vec_last.norm() < y_vec.norm()){
+                    unknown_params = x_iter_save - 0.5*step_last;
+                    step_last = 0.5*step_last;
+                    --iter_count;
+                    }
+                else{
+                    unknown_params = x_iter_save + x_iter_step;
+                    step_last = x_iter_step;
+                    y_vec_last = y_vec;
+                }
+                //cout << "y: " << y_vec_last.norm() << endl;
+                params_convert_to_matrix(params, unknown_params, unknown_idx, L_dt_tensor, stress_incr);
+                vel_bc_tensor = L_dt_tensor / dtime; ++iter_count;
+            } while (calc_relative_error(unknown_params, x_iter_save) > 1e-7 && iter_count < 40);
+        }
+
         if (abs(y_vec.norm()) > 1e-2){
-    	    if (dtime < 5e-3*timestep) {cout << "Severe disconvergence!! break!" << endl; exit(0);}
-    	    else{
-    	        //cout << "Severe disconvergence!! Will retry in a smaller step:  " << dtime/2  << endl;
-    	        dtime = dtime /1.5;
-    	    }
+            if (dtime < 5e-3*timestep) {cout << "Severe disconvergence!! break!" << endl; exit(0);}
+            else{
+                //cout << "Severe disconvergence!! Will retry in a smaller step:  " << dtime/2  << endl;
+                dtime = dtime /1.5;
+            }
         }
     } while(abs(y_vec.norm()) > 1e-2);
+
     cut_precision(vel_bc_tensor, 5);
     cut_precision(stress_incr, 5);
     if (abs(y_vec.norm()) > 1e-2){
-	cout << "End-of-step y_vec, coeff = " << endl;
+        cout << "End-of-step y_vec, coeff = " << endl;
         cout << y_vec.norm() << "  " << coeff << endl;
     }
 }
@@ -282,7 +286,7 @@ void Grain::print_dislocation(ofstream &os){
 
 void Grain::print_crss(ofstream &os){
     os << strain_tensor(0,0) << ',' << strain_tensor(1,1) << ','  << strain_tensor(2,2) << ',' << (slip_sys)[0].acc_strain;
-    for (Slip &slip_component : slip_sys) os << ',' << slip_component.crss;
+    for (Slip &slip_component : slip_sys) os << ',' << slip_component.update_params[3];
     os << endl;
 }
 

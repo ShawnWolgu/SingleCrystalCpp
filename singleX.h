@@ -83,81 +83,81 @@ vector<double> disl_velocity_grad(double rss, double crss, vector<double> harden
 
 // [class members]
 class Slip {
-    public:
-        Vector3d burgers_vec, plane_norm, plane_norm_disp;
-        Matrix3d schmidt;
-	int num = -1; bool flag_active;
-        vector<double> harden_params, update_params, latent_params, cross_params, surf_params;
-        double ref_strain_rate = 0.001, rate_sen = m, strain_rate_slip, ddgamma_dtau, shear_modulus, SSD_density, crss, acc_strain, disl_vel, cross_in = 0.0, cross_out = 0.0, dSSD_surface = 0.0, rho_sat = 0.0, lh_coeff = 1.0;
-	double ref_rate = 0.0, rho_mov = 0.0, crss_factor = 0.0, rho_init=0.0;
-	double t_wait = 0.0, t_run = 0.0;
-        const double debye_freq = 9.13e13;
-        Slip();
-        Slip(int slip_num, Vector6d &slip_info, vector<double> &hardens, vector<double> &latents, Matrix3d lattice_vec, double f_active);
-        double cal_rss(Matrix3d stress_tensor);
-        Matrix3d dL_tensor();
-        Matrix3d dstrain_tensor();
-        Matrix3d drotate_tensor();
-        Matrix6d ddp_dsigma();
-        Matrix6d dwp_dsigma();
-        void cal_strain(Grain &grain, Matrix3d stress_tensor);
-        void cal_ddgamma_dtau(Matrix3d stress_tensor);
-        void cal_shear_modulus(Matrix6d elastic_modulus);
-        void update_status(Grain &grain);
-        void update_ssd(Matrix3d dstrain);
-        void update_lhparams(Matrix3d dstrain);
-        void update_cross_slip(vector<Slip> &slip_sys, Matrix3d stress_tensor);
-        void update_rho_mov(vector<Slip> &slip_sys);
-        void update_surface_nuc(Matrix3d stress_tensor);
-    private:
-        void cal_strain_pow(Matrix3d stress_tensor);
-        void cal_strain_ddhard(Matrix3d stress_tensor, double strain_rate);
-        void cal_strain_disvel(Matrix3d stress_tensor);
-        void cal_ddgamma_dtau_pow(Matrix3d stress_tensor);
-        void cal_ddgamma_dtau_ddhard(Matrix3d stress_tensor);
-        void cal_ddgamma_dtau_disvel(Matrix3d stress_tensor);
-        void update_ddhard(vector<Slip> &slip_sys, MatrixXd lat_hard_mat, double bv);
-        void update_disvel(vector<Slip> &slip_sys, MatrixXd lat_hard_mat, double bv);
-        void update_voce(vector<Slip> &slip_sys, MatrixXd lat_hard_mat);
-        double disl_velocity(double rss);
+public:
+    Vector3d burgers_vec, plane_norm, plane_norm_disp;
+    Matrix3d schmidt;
+    int num = -1; bool flag_active;
+    vector<double> harden_params, update_params, latent_params, cross_params, surf_params;
+    double ref_strain_rate = 0.001, rate_sen = m, strain_rate_slip, ddgamma_dtau, shear_modulus, SSD_density, crss, acc_strain, disl_vel, cross_in = 0.0, cross_out = 0.0, dSSD_surface = 0.0, rho_sat = 0.0, lh_coeff = 1.0;
+    double ref_rate = 0.0, rho_mov = 0.0, crss_factor = 0.0, rho_init=0.0;
+    double t_wait = 0.0, t_run = 0.0;
+    const double debye_freq = 9.13e13;
+    Slip();
+    Slip(int slip_num, Vector6d &slip_info, vector<double> &hardens, vector<double> &latents, Matrix3d lattice_vec, double f_active);
+    double cal_rss(Matrix3d stress_tensor);
+    Matrix3d dL_tensor();
+    Matrix3d dstrain_tensor();
+    Matrix3d drotate_tensor();
+    Matrix6d ddp_dsigma();
+    Matrix6d dwp_dsigma();
+    void cal_strain(Grain &grain, Matrix3d stress_tensor);
+    void cal_ddgamma_dtau(Matrix3d stress_tensor);
+    void cal_shear_modulus(Matrix6d elastic_modulus);
+    void update_status(Grain &grain);
+    void update_ssd(Matrix3d dstrain, Matrix3d orientation);
+    void update_lhparams(Matrix3d dstrain);
+    void update_cross_slip(vector<Slip> &slip_sys, Matrix3d stress_tensor);
+    void update_rho_mov(vector<Slip> &slip_sys);
+    void update_surface_nuc(Matrix3d stress_tensor);
+private:
+    void cal_strain_pow(Matrix3d stress_tensor);
+    void cal_strain_ddhard(Matrix3d stress_tensor, double strain_rate);
+    void cal_strain_disvel(Matrix3d stress_tensor);
+    void cal_ddgamma_dtau_pow(Matrix3d stress_tensor);
+    void cal_ddgamma_dtau_ddhard(Matrix3d stress_tensor);
+    void cal_ddgamma_dtau_disvel(Matrix3d stress_tensor);
+    void update_ddhard(vector<Slip> &slip_sys, MatrixXd lat_hard_mat, double bv);
+    void update_disvel(vector<Slip> &slip_sys, MatrixXd lat_hard_mat, double bv);
+    void update_voce(vector<Slip> &slip_sys, MatrixXd lat_hard_mat);
+    double disl_velocity(double rss);
 };
 
 
 class Grain{
-    public:
-        Matrix3d lattice_vec, deform_grad, deform_grad_elas, deform_grad_plas, stress_tensor, strain_tensor, orientation, orient_ref;
-        Matrix6d elastic_modulus, elastic_modulus_ref;
-	MatrixXd lat_hard_mat;
-        vector<Slip> slip_sys;
-        double strain_rate = 1e-3;
-        Grain();
-        Grain(Matrix6d elastic_mod, Matrix3d lat_vecs, vector<Slip> s, MatrixXd latent_matrix, Matrix3d orient_Mat);
-        void update_status(Matrix3d L_dt_tensor, Matrix3d vel_grad_flag, Matrix3d stress_incr, Matrix3d dstress_flag);
-        void update_status_adaptive(Matrix3d L_dt_tensor, Matrix3d vel_grad_flag, Matrix3d stress_incr, Matrix3d dstress_flag);
-        void print_stress_strain(ofstream &os);
-        void print_stress_strain_screen();
-        void print_dislocation(ofstream &os);
-        void print_crss(ofstream &os);
-        void print_accstrain(ofstream &os);
-        void print_euler(ofstream &os);
-	void print_schmidt(ofstream &os);
-	void print_disvel(ofstream &os);
-	void print_time(ofstream &os);
-        Matrix3d get_vel_grad_plas(Matrix3d stress_incr);
-    private:
-        Vector6d solve_L_dsigma(Matrix3d &vel_grad_elas, Matrix3d &vel_grad_flag, Matrix3d &stress_incr, Matrix3d &dstress_flag);
-        Vector6d calc_fx(Matrix3d &L_dt_tensor, Matrix3d &stress_incr);
-        Matrix<double, 3, 6> dwp_by_dsigma;
-        Matrix<double, 6, 3> Sigma_ik;
-        Matrix6d ddp_by_dsigma, C_ij_pri;
-        Matrix6d get_C_ij_pri(Vector6d &stress_6d);
-        Matrix6d get_dp_grad();
-        Matrix<double, 6, 15> calc_dfx(Matrix3d &L_dt_tensor, Matrix3d &stress_incr);
-        Matrix<double, 3, 6> get_wp_grad();
-        Matrix<double, 6, 3> get_Sigma_ik(Vector6d &stress_6d);
-	void calc_slip_ddgamma_dtau(Matrix3d stress_3d);
-        void solve_Lsig_iteration(Matrix3d &L_dt_tensor, Matrix3d &vel_grad_flag, Matrix3d &stress_incr, Matrix3d &dstress_flag);
-        void solve_Lsig_iteration_adaptive(Matrix3d &L_dt_tensor, Matrix3d &vel_grad_flag, Matrix3d &stress_incr, Matrix3d &dstress_flag);
+public:
+    Matrix3d lattice_vec, deform_grad, deform_grad_elas, deform_grad_plas, stress_tensor, strain_tensor, orientation, orient_ref;
+    Matrix6d elastic_modulus, elastic_modulus_ref;
+    MatrixXd lat_hard_mat;
+    vector<Slip> slip_sys;
+    double strain_rate = 1e-3;
+    Grain();
+    Grain(Matrix6d elastic_mod, Matrix3d lat_vecs, vector<Slip> s, MatrixXd latent_matrix, Matrix3d orient_Mat);
+    void update_status(Matrix3d L_dt_tensor, Matrix3d vel_grad_flag, Matrix3d stress_incr, Matrix3d dstress_flag);
+    void update_status_adaptive(Matrix3d L_dt_tensor, Matrix3d vel_grad_flag, Matrix3d stress_incr, Matrix3d dstress_flag);
+    void print_stress_strain(ofstream &os);
+    void print_stress_strain_screen();
+    void print_dislocation(ofstream &os);
+    void print_crss(ofstream &os);
+    void print_accstrain(ofstream &os);
+    void print_euler(ofstream &os);
+    void print_schmidt(ofstream &os);
+    void print_disvel(ofstream &os);
+    void print_time(ofstream &os);
+    Matrix3d get_vel_grad_plas(Matrix3d stress_incr);
+private:
+    Vector6d solve_L_dsigma(Matrix3d &vel_grad_elas, Matrix3d &vel_grad_flag, Matrix3d &stress_incr, Matrix3d &dstress_flag);
+    Vector6d calc_fx(Matrix3d &L_dt_tensor, Matrix3d &stress_incr);
+    Matrix<double, 3, 6> dwp_by_dsigma;
+    Matrix<double, 6, 3> Sigma_ik;
+    Matrix6d ddp_by_dsigma, C_ij_pri;
+    Matrix6d get_C_ij_pri(Vector6d &stress_6d);
+    Matrix6d get_dp_grad();
+    Matrix<double, 6, 15> calc_dfx(Matrix3d &L_dt_tensor, Matrix3d &stress_incr);
+    Matrix<double, 3, 6> get_wp_grad();
+    Matrix<double, 6, 3> get_Sigma_ik(Vector6d &stress_6d);
+    void calc_slip_ddgamma_dtau(Matrix3d stress_3d);
+    void solve_Lsig_iteration(Matrix3d &L_dt_tensor, Matrix3d &vel_grad_flag, Matrix3d &stress_incr, Matrix3d &dstress_flag);
+    void solve_Lsig_iteration_adaptive(Matrix3d &L_dt_tensor, Matrix3d &vel_grad_flag, Matrix3d &stress_incr, Matrix3d &dstress_flag);
 };
 
 #endif

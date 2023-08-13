@@ -307,10 +307,10 @@ double calc_equivalent_value(Matrix3d mat){
 Vector6d set_precision(Vector6d &num, int prec){
     Vector6d result; result << num;
     for (auto &inum : result){
-	if (inum != 0){
-    	    double expo = floor(log10(abs(inum)));
-	    inum = sign(inum) * round(abs(inum) * pow(10,-expo + prec -1))/pow(10,-expo + prec -1);
-	}
+        if (inum != 0){
+            double expo = floor(log10(abs(inum)));
+            inum = sign(inum) * round(abs(inum) * pow(10,-expo + prec -1))/pow(10,-expo + prec -1);
+        }
     }
     return result;
 }

@@ -85,6 +85,7 @@ void grain_output(Grain &grain){
     grain.print_accstrain(accstrain_file);
     grain.print_schmidt(schmidt_file);
     grain.print_disvel(disvel_file);
+    if (flag_harden == 2) grain.print_time(time_step_file);
     print_custom(grain);
 }
 
@@ -126,7 +127,7 @@ void print_custom(Grain &grain){
     custom_output_file << grain.strain_tensor(0,0) << ',' << grain.strain_tensor(1,1) << ',' << grain.strain_tensor(2,2);// << ',' << grain.slip_sys[4].update_params[0];
     //Matrix3d U = (grain.orientation.transpose() * grain.orient_ref).inverse()*grain.deform_grad_elas;
     for (Slip &slip_component : grain.slip_sys) {
-	custom_output_file << ',' << (slip_component.rho_mov);// cross_in - slip_component.cross_out;
+	custom_output_file << ',' << (slip_component.rho_sat);// cross_in - slip_component.cross_out;
     }
     custom_output_file << endl;
 }

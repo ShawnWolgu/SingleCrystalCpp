@@ -27,16 +27,16 @@ void adaptive_step_load_sx(Grain &grain, Matrix3d vel_grad_tensor, Matrix3d vel_
     double acc_time = 0.0, dtime_save = 0.0, op_control = outputstep, end_time = max_strain / grain.strain_tensor.cwiseAbs().maxCoeff();
     while(grain.strain_tensor.cwiseAbs().maxCoeff() < max_strain){
         acc_time = 0.0;
-	dtime_save = dtime = min(dtime, end_time-acc_time);
+        dtime_save = dtime = min(dtime, end_time-acc_time);
         grain.update_status_adaptive(vel_grad_tensor, vel_grad_flag, stress_incr, dstress_flag);
-	norm_time += dtime/timestep;
-	if(flag_subprint) substep_output(grain);
+        norm_time += dtime/timestep;
+        if(flag_subprint) substep_output(grain);
         acc_time += dtime;
-	if (dtime == dtime_save) dtime = min(dtime * 5, timestep); 
-	//cout << dtime << endl;
+        if (dtime == dtime_save) dtime = min(dtime * 5, timestep); 
+        //cout << dtime << endl;
         if(grain.strain_tensor.cwiseAbs().maxCoeff() > op_control){
             op_control += outputstep;
-	    grain_output(grain);
+            grain_output(grain);
         }
     }
 }
