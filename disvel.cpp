@@ -129,6 +129,7 @@ vector<double> waiting_time_grad(double rss, double freq_Debye, double c_length,
     //double freq_const = 1e13;
     double kink_energy = kink_energy_ref * (1-pow((abs(rss)-back_stress)/Peierls_stress,expo_kinkeng));
     kink_energy = min(kink_energy,500 * k_boltzmann * temperature);
+    kink_energy = max(kink_energy,-500 * k_boltzmann * temperature);
     double arrh_term = exp(kink_energy/(k_boltzmann*temperature));
     double waiting_time = 1 / freq_const * arrh_term;
     double grad_const = -1 * sign(rss) * expo_kinkeng * kink_energy_ref /(Peierls_stress*k_boltzmann*temperature)/freq_const;

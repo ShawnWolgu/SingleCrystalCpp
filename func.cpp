@@ -156,7 +156,7 @@ Matrix6d cal_rotation_trans_6d_for_compl(Matrix3d M){
 
     for(int i = 0; i < 3; i++)
         for(int j = 0; j < 3; j++)
-    M66(i,j) = M(i,j)*M(i,j);
+            M66(i,j) = M(i,j)*M(i,j);
 
     M66(0,3) = xy*xz;
     M66(0,4) = xx*xz;
