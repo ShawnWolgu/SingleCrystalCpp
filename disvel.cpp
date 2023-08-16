@@ -1,158 +1,103 @@
 #include "singleX.h"
+#include <cmath>
 
-double waiting_time(double rss, double freq_Debye, double c_length, double burgers, double disl_density_for, double kink_energy_ref, double back_stress,\
-                    double Peierls_stress, double expo_kinkeng, double temperature_ref);
-double running_time(double rss, double c_drag, double wave_speed, double barrier_distance, double burgers, double back_stress, double v_c);
-vector<double> waiting_time_grad(double rss, double freq_Debye, double c_length, double burgers, double disl_density_for, double kink_energy_ref, double back_stress,\
-                    double Peierls_stress, double expo_kinkeng, double temperature_ref);
-vector<double> running_time_grad(double rss, double c_drag, double wave_speed, double barrier_distance, double burgers, double back_stress, double v_c);
-double waiting_time_old(double rss, double freq_Debye, double c_length, double burgers, double disl_density_for, double kink_energy_ref, double crss,\
-                    double Peierls_stress, double expo_kinkeng, double temperature_ref);
-vector<double> waiting_time_grad_old(double rss, double freq_Debye, double c_length, double burgers, double disl_density_for, double kink_energy_ref, double crss,\
-                    double Peierls_stress, double expo_kinkeng, double temperature_ref);
+double waiting_time(double stress_eff, double resistance_slip, double act_energy_r, double frequency_r, double energy_expo, double temperature);
+double running_time(double stress_eff, double c_drag, double speed_sat, double mean_free_path, double burgers, double temperature);
+vector<double> waiting_time_grad(double stress_eff, double resistance_slip, double act_energy_r, double frequency_r, double energy_expo, double temperature);
+vector<double> running_time_grad(double stress_eff, double c_drag, double speed_sat, double mean_free_path, double burgers, double temperature);
 
 double Slip::disl_velocity(double rss){
     /*
-     * harden parameters: 0: SSD_density,
-     * 1: freq_Debye, 2: c_length, 3: kink_energy_ref, 4: temperature_ref,
-     * 5: Peierls_stress, 6: expo_kinkeng, 7: wave_speed, 8: c_drag, 9: c_backstress,
-     * 10: c_multi, 11:c_annih, 12:HP_stress.
-     * 
+     * [velocity parameters] 
+     *  1. MFP control coeffient, 2. reference frequency, 3. activation energy, 4. slip resistance, 5. energy exponent
+     *  6. saturated speed, 7. drag coefficient
+     * [hardening parameters] 
+     *  8. forest hardening coefficient
+     * [DD evolution parameters] 
+     *  0. SSD_density, 9. multiplication coefficient, 10. drag stress D, 11. reference strain rate, 12. c/g 
+     *
      * update parameters:
-     * 0: burgers, 1: disl_density_for, 2: disl_density_perp, 3: back_stress,
-     * 4: barrier_distance
+     * 0: burgers, 1: mean_free_path, 2: disl_density_resist, 3: forest_stress,
      */
-    double freq_Debye = harden_params[1], c_length = harden_params[2], kink_energy_ref = harden_params[3],\
-           temperature_ref = harden_params[4], Peierls_stress = harden_params[5], expo_kinkeng = harden_params[6],\
-           wave_speed = harden_params[7], c_drag = harden_params[8], v_c = harden_params[11];
-    double burgers = update_params[0], disl_density_for = update_params[1],\
-           back_stress = update_params[3], barrier_distance = update_params[4];
-    if(abs(rss)-back_stress > 1e-20){
-        t_wait = waiting_time(rss, freq_Debye, c_length, burgers, disl_density_for, kink_energy_ref, back_stress,\
-                    Peierls_stress, expo_kinkeng, temperature_ref); 
-        t_run = running_time(rss, c_drag, wave_speed, barrier_distance, burgers, back_stress, v_c);
-    	ref_rate = 0.;
-        return barrier_distance / (t_wait + t_run);
-        /* return barrier_distance / t_wait ; */
+    double frequency_r = harden_params[2], act_energy_r = harden_params[3], resistance_slip = harden_params[4], \
+           energy_expo = harden_params[5], speed_sat = harden_params[6], c_drag = harden_params[7];
+    double burgers = update_params[0], mean_free_path = update_params[1], forest_stress = update_params[3];
+    double stress_eff = max(0., abs(rss) - forest_stress);
+    if (stress_eff > 1e-20) {
+        t_wait = waiting_time(stress_eff, resistance_slip, act_energy_r, frequency_r, energy_expo, temperature);
+        t_run = running_time(stress_eff, c_drag, speed_sat, mean_free_path, burgers, temperature);
+        return mean_free_path / (t_wait + t_run);
     }
     else{return 0.0;}
 }
 
-double waiting_time_old(double rss, double freq_Debye, double c_length, double burgers, double disl_density_for, double kink_energy_ref, double back_stress,\
-                    double Peierls_stress, double expo_kinkeng, double temperature_ref){
-    rss = rss*MPa_to_Pa, back_stress = back_stress*MPa_to_Pa, Peierls_stress = Peierls_stress*MPa_to_Pa, kink_energy_ref = kink_energy_ref*eV_to_J;
-    double crss = back_stress + Peierls_stress;
-    double freq_const = freq_Debye * pow(burgers,2) * c_length / sqrt(disl_density_for) * Peierls_stress / kink_energy_ref;
-    //double freq_const = 1e13;
-    double kink_energy = kink_energy_ref * (1-pow(abs(rss/crss),expo_kinkeng));
-    kink_energy = min(kink_energy,500 * k_boltzmann * temperature);
-    double arrh_term = exp(kink_energy/(k_boltzmann*temperature));
-    return 1 / freq_const * arrh_term;
-}
-
-
-double waiting_time(double rss, double freq_Debye, double c_length, double burgers, double disl_density_for, double kink_energy_ref, double back_stress,\
-                    double Peierls_stress, double expo_kinkeng, double temperature_ref){
-    rss = rss*MPa_to_Pa, back_stress = back_stress*MPa_to_Pa, Peierls_stress = Peierls_stress*MPa_to_Pa, kink_energy_ref = kink_energy_ref*eV_to_J;
-    double freq_const = freq_Debye * pow(burgers,2) * c_length / sqrt(disl_density_for) * Peierls_stress / kink_energy_ref;
-    double kink_energy = kink_energy_ref * (1-pow((abs(rss)-back_stress)/Peierls_stress,expo_kinkeng));
-    kink_energy = min(kink_energy,500 * k_boltzmann * temperature);
-    kink_energy = max(kink_energy,-500 * k_boltzmann * temperature);
-    double arrh_term = exp(kink_energy/(k_boltzmann*temperature));
-    return 1 / freq_const * arrh_term;
-}
-
-double running_time(double rss, double c_drag, double wave_speed, double barrier_distance, double burgers, double back_stress, double v_c){
-    rss = rss* MPa_to_Pa, back_stress = back_stress*MPa_to_Pa;
-    double coeff_B = (c_drag * k_boltzmann * temperature) / (wave_speed * burgers * burgers);
-    double v_norm = 2 * burgers * (abs(rss)-back_stress) / (coeff_B * wave_speed) + v_c/wave_speed;
-    //v_norm = max(v_norm,1e-35);
-    double velocity = wave_speed * (sqrt(1 + 1/pow(v_norm,2))-1/v_norm);
-    return barrier_distance / velocity;
-}
-
-vector<double> disl_velocity_grad(double rss, double crss, vector<double> harden_params, vector<double> update_params){
+vector<double> Slip::disl_velocity_grad(double rss){
     /*
-     * Also calculate the velocity.
-     * harden parameters: 0: SSD_density,
-     * 1: freq_Debye, 2: c_length, 3: kink_energy_ref, 4: temperature_ref,
-     * 5: Peierls_stress, 6: expo_kinkeng, 7: wave_speed, 8: c_drag, 9: c_backstress,
-     * 10: c_multi, 11:c_annih, 12:HP_stress.
-     * 
+     * [velocity parameters] 
+     *  1. MFP control coeffient, 2. reference frequency, 3. activation energy, 4. slip resistance, 5. energy exponent
+     *  6. saturated speed, 7. drag coefficient
+     * [hardening parameters] 
+     *  8. forest hardening coefficient
+     * [DD evolution parameters] 
+     *  0. SSD_density, 9. multiplication coefficient, 10. drag stress D, 11. reference strain rate, 12. c/g 
+     *
      * update parameters:
-     * 0: burgers, 1: disl_density_for, 2: disl_density_perp, 3: back_stress,
-     * 4: barrier_distance
+     * 0: burgers, 1: mean_free_path, 2: disl_density_resist, 3: forest_stress,
      */
-    double freq_Debye = harden_params[1], c_length = harden_params[2], kink_energy_ref = harden_params[3],\
-           temperature_ref = harden_params[4], Peierls_stress = harden_params[5], expo_kinkeng = harden_params[6],\
-           wave_speed = harden_params[7], c_drag = harden_params[8], v_c = harden_params[11];
-    double burgers = update_params[0], disl_density_for = update_params[1],\
-           back_stress = update_params[3], barrier_distance = update_params[4];
-    if(abs(rss)-back_stress > 1e-20){
-        vector<double> dtwait_drss = waiting_time_grad(rss, freq_Debye, c_length, burgers, disl_density_for, kink_energy_ref, back_stress,\
-                    Peierls_stress, expo_kinkeng, temperature_ref);
-        vector<double> dtrun_drss = running_time_grad(rss, c_drag, wave_speed, barrier_distance, burgers, back_stress, v_c);
-        double dvel_dtau = -barrier_distance / pow((dtwait_drss[1] + dtrun_drss[1]),2) * (dtwait_drss[0] + dtrun_drss[0]);
-        double velocity = barrier_distance / (dtwait_drss[1] + dtrun_drss[1]);
-        /* double dvel_dtau = -barrier_distance / pow((dtwait_drss[1]),2) * (dtwait_drss[0]); */
-        /* double velocity = barrier_distance / (dtwait_drss[1]); */
-        vector<double> result = {dvel_dtau,velocity};
-        return result;
+    double frequency_r = harden_params[2], act_energy_r = harden_params[3], resistance_slip = harden_params[4], \
+           energy_expo = harden_params[5], speed_sat = harden_params[6], c_drag = harden_params[7];
+    double burgers = update_params[0], mean_free_path = update_params[1], forest_stress = update_params[3];
+    double stress_eff = max(0., abs(rss) - forest_stress);
+    vector<double> result;
+    if (stress_eff > 1e-20) {
+        vector<double> dtwait_drss = waiting_time_grad(stress_eff, resistance_slip, act_energy_r, frequency_r, energy_expo, temperature);
+        vector<double> dtrun_drss = running_time_grad(stress_eff, c_drag, speed_sat, mean_free_path, burgers, temperature);
+        double dvel_dtau = -sign(rss) * mean_free_path / pow((dtwait_drss[1] + dtrun_drss[1]),2) * (dtwait_drss[0] + dtrun_drss[0]);
+        double velocity = mean_free_path / (dtwait_drss[1] + dtrun_drss[1]);
+        result = {dvel_dtau,velocity};
     }
-    else{
-        vector<double> result = {0.00,0.00};
-        return result;
-        }
-}
-
-vector<double> waiting_time_grad_old(double rss, double freq_Debye, double c_length, double burgers, double disl_density_for, double kink_energy_ref, double back_stress, double Peierls_stress, double expo_kinkeng, double temperature_ref){
-    /* Return a vector: 0. dtw/dtau, 1. tw. */
-    rss = rss* MPa_to_Pa, back_stress = back_stress*MPa_to_Pa, Peierls_stress = Peierls_stress*MPa_to_Pa, kink_energy_ref = kink_energy_ref*eV_to_J;
-    double crss = back_stress + Peierls_stress;
-    double freq_const = freq_Debye * pow(burgers,2) * c_length / sqrt(disl_density_for) * Peierls_stress / kink_energy_ref;
-    //double freq_const = 1e13;
-    double kink_energy = kink_energy_ref * (1-pow(abs(rss/crss),expo_kinkeng));
-    kink_energy = min(kink_energy,500 * k_boltzmann * temperature);
-    double arrh_term = exp(kink_energy/(k_boltzmann*temperature));
-    double waiting_time = 1 / freq_const * arrh_term;
-    double grad_const = -1 * sign(rss) * expo_kinkeng * kink_energy_ref /(crss*k_boltzmann*temperature)/freq_const;
-    double exp_term = 0;
-    if (kink_energy != 500*k_boltzmann*temperature) exp_term = arrh_term * pow(abs(rss)/crss,expo_kinkeng-1);
-    vector<double> result ={ grad_const*exp_term*MPa_to_Pa, waiting_time};
+    else
+        result = {0.00,0.00};
     return result;
 }
 
-vector<double> waiting_time_grad(double rss, double freq_Debye, double c_length, double burgers, double disl_density_for, double kink_energy_ref, double back_stress, double Peierls_stress, double expo_kinkeng, double temperature_ref){
+double waiting_time(double stress_eff, double resistance_slip, double act_energy_r, double frequency_r, double energy_expo, double temperature){
+    stress_eff = stress_eff * MPa_to_Pa, resistance_slip = resistance_slip * MPa_to_Pa, act_energy_r = act_energy_r * eV_to_J;
+    double act_energy = act_energy_r * (1-pow((stress_eff/resistance_slip), energy_expo)); // activation energy
+    act_energy = min(act_energy, 500 * k_boltzmann * temperature); // avoid too large activation energy;
+    act_energy = max(act_energy, -500 * k_boltzmann * temperature); // avoid too small activation energy;
+    return 1 / frequency_r * exp(act_energy / (k_boltzmann * temperature));
+}
+
+vector<double> waiting_time_grad(double stress_eff, double resistance_slip, double act_energy_r, double frequency_r, double energy_expo, double temperature){
     /* Return a vector: 0. dtw/dtau, 1. tw. */
-    rss = rss* MPa_to_Pa, back_stress = back_stress*MPa_to_Pa, Peierls_stress = Peierls_stress*MPa_to_Pa, kink_energy_ref = kink_energy_ref*eV_to_J;
-    double freq_const = freq_Debye * pow(burgers,2) * c_length / sqrt(disl_density_for) * Peierls_stress / kink_energy_ref;
-    //double freq_const = 1e13;
-    double kink_energy = kink_energy_ref * (1-pow((abs(rss)-back_stress)/Peierls_stress,expo_kinkeng));
-    kink_energy = min(kink_energy,500 * k_boltzmann * temperature);
-    kink_energy = max(kink_energy,-500 * k_boltzmann * temperature);
-    double arrh_term = exp(kink_energy/(k_boltzmann*temperature));
-    double waiting_time = 1 / freq_const * arrh_term;
-    double grad_const = -1 * sign(rss) * expo_kinkeng * kink_energy_ref /(Peierls_stress*k_boltzmann*temperature)/freq_const;
-    double exp_term = 0;
-    if (kink_energy != 500*k_boltzmann*temperature && kink_energy != -500*k_boltzmann*temperature) exp_term = arrh_term * pow((abs(rss)-back_stress)/Peierls_stress,expo_kinkeng-1);
-    vector<double> result ={ grad_const*exp_term*MPa_to_Pa, waiting_time};
+    stress_eff = stress_eff * MPa_to_Pa, resistance_slip = resistance_slip * MPa_to_Pa, act_energy_r = act_energy_r * eV_to_J;
+    double act_energy = act_energy_r * (1-pow((stress_eff/resistance_slip), energy_expo)); // activation energy
+    act_energy = min(act_energy, 500 * k_boltzmann * temperature); // avoid too large activation energy;
+    act_energy = max(act_energy, -500 * k_boltzmann * temperature); // avoid too small activation energy;
+    double waiting_time = 1 / frequency_r * exp(act_energy / (k_boltzmann * temperature));
+    double grad_term = 0;
+    if (act_energy != 500*k_boltzmann*temperature && act_energy != -500*k_boltzmann*temperature) 
+        grad_term = - act_energy_r * energy_expo * pow((stress_eff/resistance_slip), energy_expo-1) / (k_boltzmann * temperature);
+    vector<double> result ={ grad_term*waiting_time*MPa_to_Pa, waiting_time };
     return result;
 }
 
+double running_time(double stress_eff, double c_drag, double speed_sat, double mean_free_path, double burgers, double temperature){
+    stress_eff = stress_eff * MPa_to_Pa;
+    double coeff_B = (c_drag * k_boltzmann * temperature) / (speed_sat * pow(burgers,2));
+    double v_norm = 2 * burgers * stress_eff / (coeff_B * speed_sat);
+    double velocity = speed_sat * (sqrt(1 + pow(v_norm, -2)) - 1/v_norm);
+    return mean_free_path / max(velocity, 1e-40);
+}
 
-vector<double> running_time_grad(double rss, double c_drag, double wave_speed, double barrier_distance, double burgers, double back_stress, double v_c){
+vector<double> running_time_grad(double stress_eff, double c_drag, double speed_sat, double mean_free_path, double burgers, double temperature){
     /* Return a vector: 0. dtr/dtau, 1. tr. */
-    rss = rss* MPa_to_Pa, back_stress = back_stress*MPa_to_Pa;
-    double coeff_B = (c_drag * k_boltzmann * temperature) / (wave_speed * burgers * burgers);
-    //double v_norm = 2 * burgers * abs(rss) / (coeff_B * wave_speed);
-    double v_norm = 2 * burgers * (abs(rss)-back_stress) / (coeff_B * wave_speed) + v_c/wave_speed;
-    //v_norm = max(v_norm,1e-35);
-    double velocity = wave_speed * (sqrt(1 + 1/pow(v_norm,2))-1/v_norm); 
-    //velocity = max(velocity,1e-40);
-    //double gradient = 0;
-    //if (velocity != 1e-40 && v_norm != 1e-35){
-    double gradient = -1 * sign(rss) * (2*burgers*barrier_distance)/(pow(velocity,2)*coeff_B) / pow(v_norm,2) * (1-1/(v_norm * sqrt(1+1/pow(v_norm,2))));
-    //}
-    vector<double> result = {gradient*MPa_to_Pa, barrier_distance/max(velocity,1e-40)};
+    stress_eff = stress_eff * MPa_to_Pa;
+    double coeff_B = (c_drag * k_boltzmann * temperature) / (speed_sat * burgers * burgers);
+    double v_norm = 2 * burgers * stress_eff / (coeff_B * speed_sat);
+    double velocity = speed_sat * (sqrt(1 + 1/pow(v_norm,2))-1/v_norm); 
+    double gradient = -1 * (2*burgers*mean_free_path)/(pow(velocity,2)*coeff_B) * pow(v_norm,-2) * (1-1/(v_norm * sqrt(1+pow(v_norm,-2))));
+    vector<double> result = {gradient*MPa_to_Pa, mean_free_path/max(velocity,1e-40)};
     return result;
 }

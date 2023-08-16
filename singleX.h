@@ -79,7 +79,6 @@ Matrix<double,9,1> tensor_trans_order_9(Matrix3d tensor);
 Matrix<double,9,1> vel_to_dw(Matrix3d tensor);
 
 // [dislocation velocity model]
-vector<double> disl_velocity_grad(double rss, double crss, vector<double> harden_params, vector<double> update_params);
 
 // [class members]
 class Slip {
@@ -87,11 +86,11 @@ public:
     Vector3d burgers_vec, plane_norm, plane_norm_disp;
     Matrix3d schmidt;
     int num = -1; bool flag_active;
-    vector<double> harden_params, update_params, latent_params, cross_params, surf_params;
+    vector<double> harden_params;
+    vector<double> update_params, latent_params, cross_params, surf_params;
     double ref_strain_rate = 0.001, rate_sen = m, strain_rate_slip, ddgamma_dtau, shear_modulus, SSD_density, crss, acc_strain, disl_vel, cross_in = 0.0, cross_out = 0.0, dSSD_surface = 0.0, rho_sat = 0.0, lh_coeff = 1.0;
     double ref_rate = 0.0, rho_mov = 0.0, crss_factor = 0.0, rho_init=0.0;
     double t_wait = 0.0, t_run = 0.0;
-    const double debye_freq = 9.13e13;
     Slip();
     Slip(int slip_num, Vector6d &slip_info, vector<double> &hardens, vector<double> &latents, Matrix3d lattice_vec, double f_active);
     double cal_rss(Matrix3d stress_tensor);
@@ -120,6 +119,7 @@ private:
     void update_disvel(vector<Slip> &slip_sys, MatrixXd lat_hard_mat, double bv);
     void update_voce(vector<Slip> &slip_sys, MatrixXd lat_hard_mat);
     double disl_velocity(double rss);
+    vector<double> disl_velocity_grad(double rss);
 };
 
 
