@@ -41,7 +41,7 @@ void outfile_initialization(Grain &grain){
     grain.print_accstrain(accstrain_file);
     title_output(disloc_step_file, "time,e11,e22,e33,", "ssd", slip_num);
     grain.print_dislocation(disloc_step_file);
-    if (flag_harden == 2) {
+    if (flag_harden == 1) {
         title_output(time_step_file, "time,e11,e22,e33,", "tw","tr", slip_num);
         grain.print_time(time_step_file);
     };
@@ -69,7 +69,7 @@ void outfile_close(){
 void substep_output(Grain &grain){
     grain.print_stress_strain(stress_step_file);
     grain.print_dislocation(disloc_step_file);
-    if (flag_harden == 2) grain.print_time(time_step_file);
+    if (flag_harden == 1) grain.print_time(time_step_file);
     grain.print_crss(crss_file);
     grain.print_disvel(disvel_file);
     grain.print_schmidt(schmidt_file);
@@ -85,7 +85,7 @@ void grain_output(Grain &grain){
     grain.print_accstrain(accstrain_file);
     grain.print_schmidt(schmidt_file);
     grain.print_disvel(disvel_file);
-    if (flag_harden == 2) grain.print_time(time_step_file);
+    if (flag_harden == 1) grain.print_time(time_step_file);
     print_custom(grain);
 }
 

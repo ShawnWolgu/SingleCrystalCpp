@@ -146,18 +146,18 @@ void Slip::update_voce(vector<Slip> &slip_sys, MatrixXd lat_hard_mat){
 }
 
 /* Update acc_strain or SSD_density */
-void Slip::update_ssd(Matrix3d dstrain, Matrix3d orientation){
+void Slip::update_ssd(Matrix3d strain_rate, Matrix3d orientation){
     if (flag_harden == 0) acc_strain += abs(strain_rate_slip) * dtime;
-    if (flag_harden == 2){ 
+    if (flag_harden == 1){ 
         double c_forest = harden_params[8], c_multi = harden_params[9], burgers = update_params[0], c_annih = 0., \
-        D = harden_params[10] * 1e6, ref_srate = harden_params[11], c_by_g = harden_params[12], gg = c_forest/c_by_g;
-        rho_sat = c_forest * burgers / gg * (1-k_boltzmann * temperature/D/pow(burgers,3) * log(calc_equivalent_value(dstrain)/dtime/ref_srate));
-        rho_sat = pow(1/rho_sat,2);
-        rho_sat = max(rho_sat, 0.5*SSD_density);
+        D = harden_params[10] * 1e6, ref_srate = harden_params[11], gg = c_forest/harden_params[12];
+        rho_sat = c_forest * burgers / gg * (1-k_boltzmann * temperature/D/pow(burgers,3) * log(calc_equivalent_value(strain_rate)/ref_srate));
+        rho_sat = max(pow(1/rho_sat,2), 0.5*SSD_density);
         c_annih = sqrt(pow(c_multi,2)/rho_sat);
         SSD_density += (c_multi * sqrt(SSD_density) - c_annih * SSD_density) * abs(strain_rate_slip) * dtime;
         rho_mov = SSD_density;
         if(SSD_density < rho_init) rho_init = SSD_density;
+        rho_sat = strain_rate(2,2)*dtime;
     }
 }
 
@@ -184,7 +184,7 @@ void Slip::update_disvel(vector<Slip> &slip_sys, MatrixXd lat_hard_mat, double b
     }
     burgers = bv_norm * 1e-10;
     forest_stress = c_forest * shear_modulus * burgers * sqrt(disl_density_resist+joint_density);
-    mean_free_path = c_mfp / disl_density_for;
+    mean_free_path = c_mfp / sqrt(disl_density_for);
     crss_factor = joint_density+disl_density_resist;
     crss = forest_stress + resistance_slip;
     acc_strain += abs(strain_rate_slip) * dtime;

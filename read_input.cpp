@@ -172,9 +172,6 @@ void print_harden_law(){
             cout << "Hardening Law: Voce Hardening." << endl;
             break;
         case 1:
-            cout << "Hardening Law: Dislocation Density Hardening." << endl;
-            break;
-        case 2:
             cout << "Hardening Law: Dislocation Velocity Model." << endl;
             break;
         default:

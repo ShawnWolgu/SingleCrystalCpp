@@ -1,0 +1,7 @@
+build/*
+debug/*
+.DS_Store
+.cache/
+.vimspector.json
+CMakeLists.txt
+pythonscript/*

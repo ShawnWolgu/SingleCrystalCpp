@@ -119,7 +119,7 @@ void Grain::solve_Lsig_iteration(Matrix3d &vel_bc_tensor, Matrix3d &vel_grad_fla
 
 void Grain::update_status_adaptive(Matrix3d vel_bc_tensor, Matrix3d vel_grad_flag, Matrix3d stress_incr, Matrix3d dstress_flag){
     Matrix3d vel_grad_elas = Matrix3d::Zero(), vel_grad_plas = Matrix3d::Zero(), spin_elas = Matrix3d::Zero();
-    Matrix3d dstrain = Matrix3d::Zero();
+    Matrix3d strain_rate_tensor = Matrix3d::Zero();
     // update strain_rate
     if (vel_bc_tensor != Matrix3d::Zero()) strain_rate = vel_bc_tensor.cwiseAbs().maxCoeff();
     // update elastic modulus
@@ -129,25 +129,18 @@ void Grain::update_status_adaptive(Matrix3d vel_bc_tensor, Matrix3d vel_grad_fla
     cut_precision(vel_grad_plas, 5);
     vel_grad_elas = vel_bc_to_vel_grad(vel_bc_tensor*dtime) - vel_grad_plas;
     // end iteration
-    dstrain = 0.5 * (vel_grad_elas + vel_grad_plas + vel_grad_elas.transpose() + vel_grad_plas.transpose());
+    strain_rate_tensor = 0.5 * (vel_bc_to_vel_grad(vel_bc_tensor) + vel_bc_to_vel_grad(vel_bc_tensor).transpose());
     stress_tensor = stress_tensor + stress_incr;
-    strain_tensor = strain_tensor + dstrain;
+    strain_tensor = strain_tensor + strain_rate_tensor*dtime;
     deform_grad = (vel_grad_elas + vel_grad_plas + Matrix3d::Identity()) * deform_grad;
     deform_grad_elas = (vel_grad_elas + Matrix3d::Identity()) * deform_grad_elas;
     deform_grad_plas = deform_grad_elas.inverse() * deform_grad;
     spin_elas = 0.5 * (vel_grad_elas - vel_grad_elas.transpose());
     orientation = orientation * Rodrigues(spin_elas).transpose(); 
-    for (Slip &slip_component : slip_sys) slip_component.update_ssd(dstrain,orientation); 
+    for (Slip &slip_component : slip_sys) slip_component.update_ssd(strain_rate_tensor,orientation); 
     //for (Slip &slip_component : slip_sys) slip_component.update_rho_mov(slip_sys); 
     //for (Slip &slip_component : slip_sys) slip_component.update_lhparams(dstrain); 
     for (Slip &slip_component : slip_sys) slip_component.update_status(*this);
-    //cout << "-------------------------------------------------------------------" << endl;
-    //cout << "U : " << tensor_trans_order_9((Matrix3d)(orient_ref.transpose() * orientation * deform_grad_elas)).transpose() << endl;
-    //cout << "R : " << tensor_trans_order_9((Matrix3d)(orientation.transpose()*orient_ref)).transpose() << endl;
-    //cout << "le : " << tensor_trans_order_9(vel_grad_elas).transpose() << endl;
-    //cout << "we : " << tensor_trans_order_9(spin_elas).transpose() << endl;
-    //cout << "lp : " << tensor_trans_order_9(vel_grad_plas).transpose() << endl;
-    //cout << "l : " << tensor_trans_order_9((Matrix3d)(vel_grad_plas+vel_grad_elas)).transpose() << endl;
 }
 
 void Grain::solve_Lsig_iteration_adaptive(Matrix3d &vel_bc_tensor, Matrix3d &vel_grad_flag, Matrix3d &stress_incr, Matrix3d &dstress_flag){
