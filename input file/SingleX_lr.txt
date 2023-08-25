@@ -1,0 +1,33 @@
+ # Elastic Modulus (MPa)
+  1.683e5   1.221e5   1.221e5     0.0     0.0     0.0
+  1.221e5   1.683e5   1.221e5     0.0     0.0     0.0
+  1.221e5   1.221e5   1.683e5     0.0     0.0     0.0
+    0.0     0.0     0.0     0.757e5   0.0e5     0.0e5
+    0.0     0.0     0.0     0.0e5     0.757e5   0.0e5
+    0.0     0.0     0.0     0.0e5     0.0e5     0.757e5
+# Hardening Law (0: Voce Hardening, 1: Dislocation Velocity Model)
+1
+# Lattice Vectors (Angstrom)
+3.61  0      0
+0     3.61   0
+0     0      3.61
+# Euler
+Cmd
+# Slip System: FCC{111}<1-10>
+12
+ 1  1  1        0  0.5 -0.5    
+ 1  1  1        0.5  0 -0.5    
+ 1  1  1        0.5 -0.5  0    
+-1  1  1        0  0.5 -0.5    
+-1  1  1        0.5  0  0.5    
+-1  1  1        0.5  0.5  0    
+ 1 -1  1        0  0.5  0.5    
+ 1 -1  1        0.5  0 -0.5    
+ 1 -1  1        0.5  0.5  0   
+ 1  1 -1        0  0.5  0.5    
+ 1  1 -1        0.5  0  0.5   1.0 
+ 1  1 -1        0.5 -0.5  0    
+1e10	1.0	1e14	1.2 	0.3	0.80	3200	2.5	0.045	1.2e9	250.	1e9	17.5
+#SSD_density freq_Debye c_length Q_ref T_ref tau_P alpha v_s c_drag c_back c_multi v_c D ref_srate gg
+6	6	6	13.	16.5
+#N HL CJ GJ SJ
