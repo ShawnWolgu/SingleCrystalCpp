@@ -117,7 +117,7 @@ void custom_output_initialization(){
 }
 
 void custom_output_initialization(Grain &grain){
-    title_output(custom_output_file, "e11,e22,e33,", "rhohard", 12);
+    title_output(custom_output_file, "e11,e22,e33,", "rhosat", 12);
     //custom_output_file << "e11,e22,e33,U11,U12,U13,U21,U22,U23,U31,U32,U33" << endl;
     //custom_output_file << "e11,e22,e33,std_ssd,std_b,std_rate" << endl;
     print_custom(grain);
@@ -127,7 +127,7 @@ void print_custom(Grain &grain){
     custom_output_file << grain.strain_tensor(0,0) << ',' << grain.strain_tensor(1,1) << ',' << grain.strain_tensor(2,2);// << ',' << grain.slip_sys[4].update_params[0];
     //Matrix3d U = (grain.orientation.transpose() * grain.orient_ref).inverse()*grain.deform_grad_elas;
     for (Slip &slip_component : grain.slip_sys) {
-	custom_output_file << ',' << (slip_component.rho_sat);// cross_in - slip_component.cross_out;
+	custom_output_file << ',' << (slip_component.rho_H);// cross_in - slip_component.cross_out;
     }
     custom_output_file << endl;
 }

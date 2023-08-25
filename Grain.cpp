@@ -1,10 +1,10 @@
 #include "singleX.h"
 
-Grain::Grain(): deform_grad(Matrix3d::Identity()), deform_grad_elas(deform_grad), deform_grad_plas(Matrix3d::Zero()), stress_tensor(Matrix3d::Zero()),
-            strain_tensor(Matrix3d::Zero()), orientation(Matrix3d::Identity()), elastic_modulus(Matrix6d::Identity()), elastic_modulus_ref(Matrix6d::Identity()) {};
+Grain::Grain(): deform_grad(Matrix3d::Identity()), deform_grad_elas(deform_grad), deform_grad_plas(Matrix3d::Zero()), stress_tensor(Matrix3d::Zero()), \
+                strain_tensor(Matrix3d::Zero()), orientation(Matrix3d::Identity()), elastic_modulus(Matrix6d::Identity()), elastic_modulus_ref(Matrix6d::Identity()) {};
 
 Grain::Grain(Matrix6d elastic_mod, Matrix3d lat_vecs, vector<Slip> s, MatrixXd latent_matrix, Matrix3d orient_Mat){
-    deform_grad = Matrix3d::Identity(), deform_grad_elas = deform_grad, deform_grad_plas = stress_tensor = Matrix3d::Zero(),
+    deform_grad = Matrix3d::Identity(), deform_grad_elas = deform_grad, deform_grad_plas = stress_tensor = Matrix3d::Zero(), \
     strain_tensor = Matrix3d::Zero(), orient_ref = orientation = orient_Mat, elastic_modulus_ref = elastic_mod,  elastic_modulus = rotate_6d_stiff_modu(elastic_mod,orientation.transpose());
     lattice_vec = lat_vecs;
     lat_hard_mat = latent_matrix;
@@ -20,7 +20,6 @@ Matrix3d Grain::get_vel_grad_plas(Matrix3d stress_3d){
         slip_component.cal_strain(*this, stress_grain);
 	vel_grad_plas += slip_component.dL_tensor();
     }
-    //cout << "lp_cry : " << tensor_trans_order_9(vel_grad_plas).transpose() << endl;
     return tensor_rot_to_RefCoord(vel_grad_plas, orientation);
 }
 
@@ -50,81 +49,12 @@ Matrix<double, 3, 6> Grain::get_wp_grad(){
 
 void Grain::update_status(Matrix3d vel_bc_tensor, Matrix3d vel_grad_flag, Matrix3d stress_incr, Matrix3d dstress_flag){
     Matrix3d vel_grad_elas = Matrix3d::Zero(), vel_grad_plas = Matrix3d::Zero(), spin_elas = Matrix3d::Zero();
-    Matrix3d dstrain = Matrix3d::Zero();
-    // update strain_rate
-    if (vel_bc_tensor != Matrix3d::Zero()) strain_rate = vel_bc_tensor.cwiseAbs().maxCoeff() / timestep;
-    // update elastic modulus
-    elastic_modulus = rotate_6d_stiff_modu(elastic_modulus_ref,orientation.transpose());
-    solve_Lsig_iteration(vel_bc_tensor, vel_grad_flag, stress_incr, dstress_flag);
-    vel_grad_plas = get_vel_grad_plas(stress_tensor + stress_incr);
-    vel_grad_elas = vel_bc_to_vel_grad(vel_bc_tensor) - vel_grad_plas;
-    // end iteration
-    dstrain = 0.5 * (vel_grad_elas + vel_grad_plas + vel_grad_elas.transpose() + vel_grad_plas.transpose());
-    stress_tensor = stress_tensor + stress_incr;
-    strain_tensor = strain_tensor + 0.5 * (vel_grad_elas + vel_grad_plas + vel_grad_elas.transpose() + vel_grad_plas.transpose());
-    deform_grad = (vel_grad_elas + vel_grad_plas + Matrix3d::Identity()) * deform_grad;
-    deform_grad_elas = (vel_grad_elas + Matrix3d::Identity()) * deform_grad_elas;
-    deform_grad_plas = deform_grad_elas.inverse() * deform_grad;
-    spin_elas = 0.5 * (vel_grad_elas - vel_grad_elas.transpose());
-    orientation = orientation * Rodrigues(spin_elas).transpose(); 
-    for (Slip &slip_component : slip_sys) slip_component.update_ssd(dstrain, orientation);
-    for (Slip &slip_component : slip_sys) slip_component.update_status(*this);
-}
-
-void Grain::solve_Lsig_iteration(Matrix3d &vel_bc_tensor, Matrix3d &vel_grad_flag, Matrix3d &stress_incr, Matrix3d &dstress_flag){
-    Matrix<double, 15, 1> params, flags;
-    params << tensor_trans_order_9(vel_bc_tensor), tensor_trans_order(stress_incr);
-    flags << tensor_trans_order_9(vel_grad_flag), tensor_trans_order(dstress_flag);
-    vector<int> unknown_idx(6,0), known_idx(9,0);
-    flag_to_idx(flags, known_idx, unknown_idx);
-    Matrix<double,9,1> known_params = params(known_idx);
-    Vector6d unknown_params = params(unknown_idx), stress_6d = tensor_trans_order(stress_tensor), y_vec = Vector6d::Zero();
-    C_ij_pri = get_C_ij_pri(stress_6d);
-    Sigma_ik = get_Sigma_ik(stress_6d);
-    double coeff = 1/1.2;
-
-    do{
-	coeff = 1/1.2;	y_vec = Vector6d::Zero();
-   	Vector6d x_iter_save = Vector6d::Zero(), x_iter_step = Vector6d::Zero(), y_vec_last = Vector6d::Zero();
-   	Matrix<double,6,15> dfx_matrix;
-        do{
-            x_iter_save = unknown_params;
-            y_vec = calc_fx(vel_bc_tensor, stress_incr);
-            if (y_vec_last != Vector6d::Zero() && y_vec.norm()/y_vec_last.norm() > 1){
-                coeff = 0.5 * coeff;
-                unknown_params = x_iter_save - coeff * x_iter_step;
-            }
-            else{
-                coeff = 1.2 * coeff;
-    		dfx_matrix = calc_dfx(vel_bc_tensor, stress_incr);
-    	    	x_iter_step = -dfx_matrix(all,unknown_idx).inverse()*y_vec;
-		y_vec_last = y_vec;
-                unknown_params = x_iter_save + coeff * x_iter_step;
-            }
-	    params_convert_to_matrix(params, unknown_params, unknown_idx, vel_bc_tensor, stress_incr);
-        } while ((unknown_params - x_iter_save).norm() > 1e-7);
-        if (abs(y_vec.norm()) > 1e-3){
-    	    if (dtime < 1e-20) {cout << "Severe disconvergence!! break!" << endl; exit(0);}
-    	    else{
-//    	        cout << "Severe disconvergence!! Will retry in a smaller step:  " << dtime/2  << endl;
-    	        dtime = dtime /2;
-    	    }
-        }
-    } while(abs(y_vec.norm()) > 1e-3);
-    if (abs(y_vec.norm()) > 1e-3){
-	cout << "End-of-step y_vec, coeff = " << endl;
-        cout << y_vec.norm() << "  " << coeff << endl;
-    }
-}
-
-void Grain::update_status_adaptive(Matrix3d vel_bc_tensor, Matrix3d vel_grad_flag, Matrix3d stress_incr, Matrix3d dstress_flag){
-    Matrix3d vel_grad_elas = Matrix3d::Zero(), vel_grad_plas = Matrix3d::Zero(), spin_elas = Matrix3d::Zero();
     Matrix3d strain_rate_tensor = Matrix3d::Zero();
     // update strain_rate
     if (vel_bc_tensor != Matrix3d::Zero()) strain_rate = vel_bc_tensor.cwiseAbs().maxCoeff();
     // update elastic modulus
     elastic_modulus = rotate_6d_stiff_modu(elastic_modulus_ref,orientation.transpose());
-    solve_Lsig_iteration_adaptive(vel_bc_tensor, vel_grad_flag, stress_incr, dstress_flag);
+    solve_iteration(vel_bc_tensor, vel_grad_flag, stress_incr, dstress_flag);
     vel_grad_plas = get_vel_grad_plas(stress_tensor + stress_incr);
     cut_precision(vel_grad_plas, 5);
     vel_grad_elas = vel_bc_to_vel_grad(vel_bc_tensor*dtime) - vel_grad_plas;
@@ -138,12 +68,11 @@ void Grain::update_status_adaptive(Matrix3d vel_bc_tensor, Matrix3d vel_grad_fla
     spin_elas = 0.5 * (vel_grad_elas - vel_grad_elas.transpose());
     orientation = orientation * Rodrigues(spin_elas).transpose(); 
     for (Slip &slip_component : slip_sys) slip_component.update_ssd(strain_rate_tensor,orientation); 
-    //for (Slip &slip_component : slip_sys) slip_component.update_rho_mov(slip_sys); 
-    //for (Slip &slip_component : slip_sys) slip_component.update_lhparams(dstrain); 
+    for (Slip &slip_component : slip_sys) slip_component.update_rho_hard(slip_sys);
     for (Slip &slip_component : slip_sys) slip_component.update_status(*this);
 }
 
-void Grain::solve_Lsig_iteration_adaptive(Matrix3d &vel_bc_tensor, Matrix3d &vel_grad_flag, Matrix3d &stress_incr, Matrix3d &dstress_flag){
+void Grain::solve_iteration(Matrix3d &vel_bc_tensor, Matrix3d &vel_grad_flag, Matrix3d &stress_incr, Matrix3d &dstress_flag){
     Matrix<double, 15, 1> params, flags;
     Matrix3d L_dt_tensor = vel_bc_tensor * dtime;
     params << tensor_trans_order_9(L_dt_tensor), tensor_trans_order(stress_incr);
@@ -154,12 +83,13 @@ void Grain::solve_Lsig_iteration_adaptive(Matrix3d &vel_bc_tensor, Matrix3d &vel
     Vector6d unknown_params = params(unknown_idx), stress_6d = tensor_trans_order(stress_tensor), y_vec = Vector6d::Zero();
     C_ij_pri = get_C_ij_pri(stress_6d);
     Sigma_ik = get_Sigma_ik(stress_6d);
-    double coeff = 1; int iter_count = 0;
-
+    int iter_count = 0;
+    
     do{
-        coeff = 1;	y_vec = Vector6d::Zero(); iter_count = 0;
+        y_vec = Vector6d::Zero(); iter_count = 0;
         Vector6d x_iter_save = Vector6d::Zero(), x_iter_step = Vector6d::Zero(), y_vec_last = Vector6d::Zero();
         L_dt_tensor = vel_bc_tensor * dtime;
+        params(Eigen::seq(0,8)) = tensor_trans_order_9(L_dt_tensor);
         Matrix<double,6,15> dfx_matrix;
 
         // Start Newton-Raphson iteration
@@ -169,9 +99,9 @@ void Grain::solve_Lsig_iteration_adaptive(Matrix3d &vel_bc_tensor, Matrix3d &vel
             dfx_matrix = calc_dfx(L_dt_tensor, stress_incr);
             x_iter_step = -dfx_matrix(all,unknown_idx).inverse()*y_vec;
             y_vec_last = y_vec;
-            unknown_params = x_iter_save + coeff * x_iter_step;
+            unknown_params = x_iter_save + x_iter_step;
             params_convert_to_matrix(params, unknown_params, unknown_idx, L_dt_tensor, stress_incr);
-            vel_bc_tensor = L_dt_tensor / dtime; ++iter_count;
+            ++ iter_count;
         } while (calc_relative_error(unknown_params, x_iter_save) > 1e-7 && iter_count < 5);
         // End Newton-Raphson iteration
         
@@ -193,26 +123,22 @@ void Grain::solve_Lsig_iteration_adaptive(Matrix3d &vel_bc_tensor, Matrix3d &vel
                     step_last = x_iter_step;
                     y_vec_last = y_vec;
                 }
-                //cout << "y: " << y_vec_last.norm() << endl;
                 params_convert_to_matrix(params, unknown_params, unknown_idx, L_dt_tensor, stress_incr);
-                vel_bc_tensor = L_dt_tensor / dtime; ++iter_count;
+                ++ iter_count;
             } while (calc_relative_error(unknown_params, x_iter_save) > 1e-7 && iter_count < 40);
         }
 
         if (abs(y_vec.norm()) > 1e-2){
-            if (dtime < 5e-3*timestep) {cout << "Severe disconvergence!! break!" << endl; exit(0);}
-            else{
-                //cout << "Severe disconvergence!! Will retry in a smaller step:  " << dtime/2  << endl;
-                dtime = dtime /1.5;
-            }
+            if (dtime < 1e-3*timestep) {cout << "Severe disconvergence!! break!" << endl; exit(0);}
+            dtime = dtime /1.5;
         }
     } while(abs(y_vec.norm()) > 1e-2);
 
-    cut_precision(vel_bc_tensor, 5);
-    cut_precision(stress_incr, 5);
+    vel_bc_tensor = L_dt_tensor / dtime;
+    /* cut_precision(vel_bc_tensor, 5); */
+    /* cut_precision(stress_incr, 5); */
     if (abs(y_vec.norm()) > 1e-2){
-        cout << "End-of-step y_vec, coeff = " << endl;
-        cout << y_vec.norm() << "  " << coeff << endl;
+        cout << "End-of-step y_vec = " << y_vec.norm() << endl;
     }
 }
 
@@ -220,11 +146,6 @@ Vector6d Grain::calc_fx(Matrix3d &vel_bc_tensor, Matrix3d &stress_incr){
     Matrix<double, 6, 9> left_M;
     left_M << C_ij_pri*strain_modi_tensor, Sigma_ik;
     Matrix3d vel_grad_elas = vel_bc_to_vel_grad(vel_bc_tensor) - get_vel_grad_plas(stress_tensor + stress_incr);
-    //cout << "bc : " << vel_bc_tensor << endl;
-    //cout << "s : " << stress_tensor << endl;
-    //cout << "ds : " << stress_incr << endl;
-    //cout << "le : " << vel_grad_elas << endl;
-    //cout << "Cde :" << calc_stress((0.5*vel_grad_elas+0.5*vel_grad_elas.transpose()), elastic_modulus) << endl;
     Vector6d return_vec = left_M * vel_to_dw(vel_grad_elas) - tensor_trans_order(stress_incr);
     return return_vec;
 }
@@ -238,9 +159,7 @@ Matrix<double, 6, 15> Grain::calc_dfx(Matrix3d &vel_bc_tensor, Matrix3d &stress_
     Matrix<double,15,15> trans_compo;
     dfx_dX << C_ij_pri*strain_modi_tensor, Sigma_ik, dfx_ddsigma;
     trans_compo << bc_modi_matrix, Matrix<double,9,6>::Zero(), Matrix<double,6,9>::Zero(), Matrix6d::Identity();
-    //cout << "dfx_dX: " << endl << dfx_dX << endl;
     dfx_dX = dfx_dX * trans_compo;
-    //cout << "dfx_dX * trans: " << endl << dfx_dX << endl;
     return dfx_dX;
 }
 

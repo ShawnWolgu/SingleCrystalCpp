@@ -16,7 +16,6 @@ using Eigen::Matrix3d, Eigen::Vector3d, Eigen::Matrix, Eigen::MatrixXd, Eigen::a
 typedef Matrix<double, 6, 1> Vector6d;
 typedef Matrix<double, 6, 6> Matrix6d;
 
-// [constants]
 #define pi 3.14159265358979323846
 #define k_boltzmann 1.380649e-23
 #define eV_to_J 1.60217662e-19
@@ -30,6 +29,7 @@ extern string sxfile_path, loadfile_path, configure_path;
 extern Matrix6d strain_modi_tensor;
 extern Matrix<double,9,9> bc_modi_matrix, vel_to_dw_matrix;
 extern vector<double> euler_line_input;
+
 // [classes]
 class Grain;
 class Slip;
@@ -47,7 +47,6 @@ void grain_output(Grain &grain);
 void outfile_close();
 
 // [load apply]
-void singleXloading(Grain &grain, Matrix3d vel_grad_tensor, Matrix3d vel_grad_flag, Matrix3d stress_incr, Matrix3d dstress_flag, bool flag_subprint);
 void adaptive_step_load_sx(Grain &grain, Matrix3d vel_grad_tensor, Matrix3d vel_grad_flag, Matrix3d stress_incr, Matrix3d dstress_flag, bool flag_subprint);
 
 // [functions]
@@ -56,6 +55,7 @@ void params_convert_to_matrix(Matrix<double, 15, 1> &params, Vector6d &unknown_p
 void cut_precision(Matrix3d &mat, int prec);
 int sign(double x);
 int heaviside(double x);
+int get_interaction_mode(Vector3d burgers_i, Vector3d plane_i, Vector3d burgers_j, Vector3d plane_j);
 double cal_cosine(Vector3d vec_i, Vector3d vec_j);
 double set_precision(double num, int prec);
 double calc_relative_error(Vector6d &v1, Vector6d &v2);
@@ -87,9 +87,9 @@ public:
     Matrix3d schmidt;
     int num = -1; bool flag_active;
     vector<double> harden_params;
-    vector<double> update_params, latent_params, cross_params, surf_params;
-    double ref_strain_rate = 0.001, rate_sen = m, strain_rate_slip, ddgamma_dtau, shear_modulus, SSD_density, crss, acc_strain, disl_vel, cross_in = 0.0, cross_out = 0.0, dSSD_surface = 0.0, rho_sat = 0.0, lh_coeff = 1.0;
-    double ref_rate = 0.0, rho_mov = 0.0, crss_factor = 0.0, rho_init=0.0;
+    vector<double> update_params, latent_params;
+    double ref_strain_rate = 0.001, rate_sen = m, strain_rate_slip, ddgamma_dtau, shear_modulus, SSD_density, crss, acc_strain, disl_vel, rho_sat = 0.0, custom_var = 0.0, drag_stress = 0.0;
+    double ref_rate = 0.0, rho_mov = 0.0, crss_factor = 0.0, rho_init=0.0, rho_H = 0.0;
     double t_wait = 0.0, t_run = 0.0;
     Slip();
     Slip(int slip_num, Vector6d &slip_info, vector<double> &hardens, vector<double> &latents, Matrix3d lattice_vec, double f_active);
@@ -104,6 +104,7 @@ public:
     void cal_shear_modulus(Matrix6d elastic_modulus);
     void update_status(Grain &grain);
     void update_ssd(Matrix3d dstrain, Matrix3d orientation);
+    void update_rho_hard(vector<Slip> &slip_sys);
     void update_lhparams(Matrix3d dstrain);
     void update_cross_slip(vector<Slip> &slip_sys, Matrix3d stress_tensor);
     void update_rho_mov(vector<Slip> &slip_sys);
@@ -133,7 +134,6 @@ public:
     Grain();
     Grain(Matrix6d elastic_mod, Matrix3d lat_vecs, vector<Slip> s, MatrixXd latent_matrix, Matrix3d orient_Mat);
     void update_status(Matrix3d L_dt_tensor, Matrix3d vel_grad_flag, Matrix3d stress_incr, Matrix3d dstress_flag);
-    void update_status_adaptive(Matrix3d L_dt_tensor, Matrix3d vel_grad_flag, Matrix3d stress_incr, Matrix3d dstress_flag);
     void print_stress_strain(ofstream &os);
     void print_stress_strain_screen();
     void print_dislocation(ofstream &os);
@@ -156,8 +156,7 @@ private:
     Matrix<double, 3, 6> get_wp_grad();
     Matrix<double, 6, 3> get_Sigma_ik(Vector6d &stress_6d);
     void calc_slip_ddgamma_dtau(Matrix3d stress_3d);
-    void solve_Lsig_iteration(Matrix3d &L_dt_tensor, Matrix3d &vel_grad_flag, Matrix3d &stress_incr, Matrix3d &dstress_flag);
-    void solve_Lsig_iteration_adaptive(Matrix3d &L_dt_tensor, Matrix3d &vel_grad_flag, Matrix3d &stress_incr, Matrix3d &dstress_flag);
+    void solve_iteration(Matrix3d &L_dt_tensor, Matrix3d &vel_grad_flag, Matrix3d &stress_incr, Matrix3d &dstress_flag);
 };
 
 #endif

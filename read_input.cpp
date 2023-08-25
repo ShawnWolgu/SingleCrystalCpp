@@ -1,6 +1,5 @@
 #include "singleX.h"
 
-int get_interaction_mode(Vector3d burgers_i, Vector3d plane_i, Vector3d burgers_j, Vector3d plane_j);
 bool hasEnding (std::string const &fullString, std::string const &ending);
 void print_harden_law();
 void add_slips(ifstream &is, vector<Slip> &slips, Matrix3d lattice_vecs);
@@ -242,11 +241,12 @@ double cal_cosine(Vector3d vec_i, Vector3d vec_j){
     return vec_i.dot(vec_j)/(vec_i.norm() * vec_j.norm());
 }
 
+/*
+ * Return the dislocation interaction mode code between two slip system.
+ * 0: No Junction, 1: Hirth Lock, 2: Coplanar Junction, 3: Glissile Junction, 4: Sessile Junction
+ */
 int get_interaction_mode(Vector3d burgers_i, Vector3d plane_i, Vector3d burgers_j, Vector3d plane_j){
-    /*
-     * Return the dislocation interaction mode code between two slip system.
-     * 0: No Junction, 1: Hirth Lock, 2: Coplanar Junction, 3: Glissile Junction, 4: Sessile Junction
-     */
+
     double perp = 0.02, prll = 0.98;
     double cos_b_angle = cal_cosine(burgers_i, burgers_j);
     if(abs(cos_b_angle) < perp) return 1;
@@ -258,7 +258,7 @@ int get_interaction_mode(Vector3d burgers_i, Vector3d plane_i, Vector3d burgers_
                 bool if_glide_i = (abs(cal_cosine(plane_i, burgers_i+burgers_j)) < perp);
                 bool if_glide_j = (abs(cal_cosine(plane_j, burgers_i+burgers_j)) < perp);
                 if (if_glide_i || if_glide_j) return 3;
-                    else return 4;
+                else return 4;
             }
         }
     }
