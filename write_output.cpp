@@ -33,17 +33,18 @@ void outfile_initialization(Grain &grain){
     stress_file << "time,e11,e22,e33,e12,e13,e23,s11,s22,s33,s12,s13,s23" << endl;
     grain.print_stress_strain(stress_file);
     cout << "This grain has " << slip_num << " slip systems" << endl;
-    title_output(disloc_file, "time,e11,e22,e33,", "ssd", slip_num);
-    grain.print_dislocation(disloc_file);
     title_output(crss_file,"e11,e22,e33,acc_strain,","crss", slip_num);
     grain.print_crss(crss_file);
     title_output(accstrain_file,"e11,e22,e33,","acc_strain", slip_num);
     grain.print_accstrain(accstrain_file);
-    title_output(disloc_step_file, "time,e11,e22,e33,", "ssd", slip_num);
-    grain.print_dislocation(disloc_step_file);
     if (flag_harden == 1) {
         title_output(time_step_file, "time,e11,e22,e33,", "tw","tr", slip_num);
         grain.print_time(time_step_file);
+        title_output(disloc_file, "time,e11,e22,e33,", "ssd", slip_num);
+        grain.print_dislocation(disloc_file);
+        title_output(disloc_step_file, "time,e11,e22,e33,", "ssd", slip_num);
+        grain.print_dislocation(disloc_step_file);
+        custom_output_initialization(grain);
     };
     euler_file << "phi1,PHI,phi2" << endl;
     grain.print_euler(euler_file);
@@ -51,7 +52,6 @@ void outfile_initialization(Grain &grain){
     grain.print_schmidt(schmidt_file);
     title_output(disvel_file, "e11,e22,e33,", "vel", slip_num);
     grain.print_disvel(disvel_file);
-    custom_output_initialization(grain);
     cout << "Finish Initialization." << endl;
 }
 

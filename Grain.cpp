@@ -198,7 +198,7 @@ void Grain::print_dislocation(ofstream &os){
 
 void Grain::print_crss(ofstream &os){
     os << strain_tensor(0,0) << ',' << strain_tensor(1,1) << ','  << strain_tensor(2,2) << ',' << (slip_sys)[0].acc_strain;
-    for (Slip &slip_component : slip_sys) os << ',' << slip_component.update_params[3];
+    for (Slip &slip_component : slip_sys) os << ',' << slip_component.crss;
     os << endl;
 }
 
