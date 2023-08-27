@@ -1,4 +1,0 @@
-# Single Crystal File
-./SingleX/SingleX_disvel.txt
-# Load File
-./Load/Load.txt
