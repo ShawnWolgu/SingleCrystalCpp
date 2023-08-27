@@ -5,3 +5,4 @@ debug/*
 .vimspector.json
 CMakeLists.txt
 pythonscript/*
+SXfiles/*
