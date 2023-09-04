@@ -151,7 +151,7 @@ void Slip::update_ssd(Matrix3d strain_rate, Matrix3d orientation){
         double c_forest = harden_params[8], c_multi = harden_params[9], burgers = update_params[0], c_annih = 0., \
         D = harden_params[10] * 1e6, ref_srate = harden_params[11], gg = c_forest/harden_params[12], \
         c_multi_x = c_multi / (update_params[1] * sqrt(SSD_density)); 
-        rho_sat = c_forest * burgers / gg * (1-k_boltzmann * temperature/D/pow(burgers,3) * log(strain_rate(2,2)/ref_srate));
+        rho_sat = c_forest * burgers / gg * (1-k_boltzmann * temperature/D/pow(burgers,3) * log(abs(strain_rate(2,2))/ref_srate));
         rho_sat = max(pow(1/rho_sat,2), 0.5*SSD_density);
         c_annih = sqrt(pow(c_multi,2)/rho_sat);
         SSD_density += (c_multi * sqrt(SSD_density) - c_annih * SSD_density) * abs(strain_rate_slip) * dtime;
