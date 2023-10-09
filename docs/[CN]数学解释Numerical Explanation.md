@@ -113,11 +113,11 @@ $$ \frac{\partial{w_p^c}}{\partial \Delta\sigma^c}=AS^T \frac{\partial\dot\gamma
 对于不同的边界条件设定，有
 
 $$
-\begin{pmatrix} d \\\\ w \\\\ \Delta \sigma \end{pmatrix}_{15*1} 
-= \begin{pmatrix} I_{3*3} & 0 & 0 & 0_{3*6} \\\\ 0 & 0.5I_{3*3} & 0.5I_{3*3} & 0_{3*6} \\\\
-0 & 0.5I_{3*3} & -0.5I_{3*3} & 0_{3*6} \\\\
-0 & 0 & 0 & I_{6*6} \end{pmatrix}_{15*15} \begin{pmatrix} L \\\\ 
-\Delta \sigma \end{pmatrix}_{15*1}
+\begin{pmatrix} d \\\\ w \\\\ \Delta \sigma \end{pmatrix}\_{15*1} 
+= \begin{pmatrix} I\_{3*3} & 0 & 0 & 0\_{3*6} \\\\ 0 & 0.5I\_{3*3} & 0.5I\_{3*3} & 0\_{3*6} \\\\
+0 & 0.5I\_{3*3} & -0.5I\_{3*3} & 0\_{3*6} \\\\
+0 & 0 & 0 & I\_{6*6} \end{pmatrix}\_{15*15} \begin{pmatrix} L \\\\ 
+\Delta \sigma \end{pmatrix}\_{15*1}
 $$
 
 得到目标函数 $f(X)=0$ 与梯度 $\partial f(X)/\partial X$ 之后，即可根据牛顿迭代法求 $X$ ，即
@@ -204,9 +204,9 @@ $$
 
 $\rho_h$ 代表了其他滑移系位错对当前滑移系的阻碍作用，表示排他性；$\rho_J$ 代表了当前滑移系位错水平对交互作用的贡献，允许当前滑移系在位错水平较低时降低交互作用的阻碍性。
 
-$$ \tau_c=\tau_P+c_bbG\sqrt{\rho_h+\rho_J} $$
-$$ \rho_J=\sum_{\beta\neq\alpha}{h^{\alpha\beta}\sqrt{\rho^\beta_*\rho^\alpha_*}},\rho_*=\rho-\rho_0 $$
-$$ \rho_h=\sum h^{\alpha\beta}\rho^\beta_e,\rho_e=\rho+min(\rho^\beta,\rho^\gamma),\alpha,\beta,\gamma \text{ are coplanar slips.} $$
+$$ \tau_c = \tau_P + c_b b G \sqrt{\rho_h + \rho_J} $$
+$$ \rho_J = \sum_{\beta\neq\alpha} {h^{\alpha\beta} \sqrt{\rho^\beta\_\*\rho^\alpha\_\*}},\rho\_\*=\rho-\rho_0 $$
+$$ \rho_h = \sum h^{\alpha\beta} \rho^\beta_e , \rho_e = \rho + \text{min} (\rho^\beta, \rho^\gamma), \alpha, \beta, \gamma \text{ are coplanar slips.} $$
 
 为了判断滑移系属于哪种情况，且避免一开始就输入一个巨大的矩阵，还要与滑移系一一对应，还是通过几何条件判断确定 $f^{\alpha\beta}$ 的分类与取值：
 
