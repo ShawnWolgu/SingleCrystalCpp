@@ -38,6 +38,7 @@ Slip::Slip(int number, Vector6d &slip_info, vector<double> &hardens, vector<doub
     ddgamma_dtau = 0.00;
     shear_modulus = 0;
     disl_vel = 0.0;
+    rss = 0.0;
 };
 
 Matrix3d Slip::dL_tensor() {return schmidt * strain_rate_slip * dtime;}
@@ -68,7 +69,8 @@ void Slip::cal_shear_modulus(Matrix6d elastic_modulus){
     Vector3d trav_direc = burgers_vec.cross(plane_norm);
     slip_rotation << (burgers_vec/burgers_vec.norm()), plane_norm, trav_direc / trav_direc.norm();
     shear_modulus = rotate_6d_stiff_modu(elastic_modulus, slip_rotation.transpose())(3,3);
-    //cout << "Shear modulus of slip system " << num << " is " << shear_modulus << endl;
+    cout << "Shear modulus of slip system " << num << " is " << shear_modulus << endl;
+    cout << "Burgers length of slip system " << num << " is " << burgers_vec.norm() << endl;
 }
 
 void Slip::cal_strain(Grain &grain, Matrix3d stress_tensor){
@@ -100,6 +102,7 @@ void Slip::cal_strain_pow(Matrix3d stress_tensor){
     if(abs(rss_slip) > 0.5 * crss){
         strain_rate_slip = ref_strain_rate * pow(abs(rss_slip / crss), 1/rate_sen)* sign(rss_slip); 
     }
+    rss = rss_slip;
 }   
 
 void Slip::cal_strain_disvel(Matrix3d stress_tensor){
@@ -107,6 +110,7 @@ void Slip::cal_strain_disvel(Matrix3d stress_tensor){
     double rss_slip = cal_rss(stress_tensor);
     disl_vel = disl_velocity(rss_slip);
     strain_rate_slip = abs(rho_mov * burgers * disl_vel) * sign(rss_slip);
+    rss = rss_slip;
 }
 
 void Slip::update_status(Grain &grain){
@@ -148,16 +152,19 @@ void Slip::update_voce(vector<Slip> &slip_sys, MatrixXd lat_hard_mat){
 void Slip::update_ssd(Matrix3d strain_rate, Matrix3d orientation){
     if (flag_harden == 0) acc_strain += abs(strain_rate_slip) * dtime;
     if (flag_harden == 1){ 
-        double c_forest = harden_params[8], c_multi = harden_params[9], burgers = update_params[0], c_annih = 0., \
-        D = harden_params[10] * 1e6, ref_srate = harden_params[11], gg = c_forest/harden_params[12], \
-        c_multi_x = c_multi / (update_params[1] * sqrt(SSD_density)); 
-        rho_sat = c_forest * burgers / gg * (1-k_boltzmann * temperature/D/pow(burgers,3) * log(abs(strain_rate(2,2))/ref_srate));
+        double c_forest = harden_params[8], c_nuc = harden_params[9], c_multi = harden_params[10], c_annih = 0.,\
+               D = harden_params[11] * 1e6, ref_srate = harden_params[12], gg = c_forest/harden_params[13], 
+               burgers = update_params[0], mfp = update_params[1], forest_stress = update_params[3]; 
+        /* double equi_strain_rate = calc_equivalent_value(strain_rate); */
+        double equi_strain_rate = strain_rate(2,2);
+        rho_sat = c_forest * burgers / gg * (1-k_boltzmann * temperature/D/pow(burgers,3) * log(abs(equi_strain_rate)/ref_srate));
         rho_sat = max(pow(1/rho_sat,2), 0.5*SSD_density);
-        c_annih = sqrt(pow(c_multi,2)/rho_sat);
-        SSD_density += (c_multi * sqrt(SSD_density) - c_annih * SSD_density) * abs(strain_rate_slip) * dtime;
+        double term_nuc = c_nuc * max(abs(rss)-100,0.) / (shear_modulus * burgers * burgers);
+        double term_multi = c_multi / mfp; 
+        c_annih = (term_multi + term_nuc) / rho_sat;
+        SSD_density += (term_multi + term_nuc - c_annih * SSD_density) * abs(strain_rate_slip) * dtime;
         rho_mov = SSD_density;
         if(SSD_density < rho_init) rho_init = SSD_density;
-        custom_var = strain_rate(2,2);
     }
 }
 

@@ -15,6 +15,7 @@ void outfile_initialization(){
     stress_file << "time,e11,e22,e33,e12,e13,e23,s11,s22,s33,s12,s13,s23" << endl;
     disloc_file << "time,e11,e22,e33,dd1,dd2,dd3,...," << endl;
     crss_file << "e11,e22,e33,acc_strain,crss1,crss2,crss3,..," <<endl;
+    rss_file << "e11,e22,e33,acc_strain,rss1,rss2,rss3,..," <<endl;
     accstrain_file << "e11,e22,e33,acc_strain1,acc_strain2,acc_strain3,...," <<endl;
     disloc_step_file << "time,e11,e22,e33,dd1,dd2,dd3,...," << endl; 
     euler_file << "phi1,PHI,phi2" << endl;
@@ -35,6 +36,8 @@ void outfile_initialization(Grain &grain){
     cout << "This grain has " << slip_num << " slip systems" << endl;
     title_output(crss_file,"e11,e22,e33,acc_strain,","crss", slip_num);
     grain.print_crss(crss_file);
+    title_output(rss_file,"e11,e22,e33,acc_strain,","crss", slip_num);
+    grain.print_rss(rss_file);
     title_output(accstrain_file,"e11,e22,e33,","acc_strain", slip_num);
     grain.print_accstrain(accstrain_file);
     if (flag_harden == 1) {
@@ -61,6 +64,7 @@ void outfile_close(){
     stress_file.close();
     disloc_file.close();
     crss_file.close();
+    rss_file.close();
     euler_file.close();
     custom_output_file.close();
     accstrain_file.close();
@@ -83,6 +87,7 @@ void grain_output(Grain &grain){
     grain.print_stress_strain_screen();
     grain.print_euler(euler_file);
     grain.print_accstrain(accstrain_file);
+    grain.print_rss(rss_file);
     grain.print_schmidt(schmidt_file);
     grain.print_disvel(disvel_file);
     if (flag_harden == 1) grain.print_time(time_step_file);
@@ -127,7 +132,7 @@ void print_custom(Grain &grain){
     custom_output_file << grain.strain_tensor(0,0) << ',' << grain.strain_tensor(1,1) << ',' << grain.strain_tensor(2,2);// << ',' << grain.slip_sys[4].update_params[0];
     //Matrix3d U = (grain.orientation.transpose() * grain.orient_ref).inverse()*grain.deform_grad_elas;
     for (Slip &slip_component : grain.slip_sys) {
-	custom_output_file << ',' << (slip_component.rho_H);// cross_in - slip_component.cross_out;
+	custom_output_file << ',' << (slip_component.custom_var);// cross_in - slip_component.cross_out;
     }
     custom_output_file << endl;
 }

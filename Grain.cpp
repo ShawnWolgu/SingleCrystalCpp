@@ -202,6 +202,12 @@ void Grain::print_crss(ofstream &os){
     os << endl;
 }
 
+void Grain::print_rss(ofstream &os){
+    os << strain_tensor(0,0) << ',' << strain_tensor(1,1) << ','  << strain_tensor(2,2) << ',' << (slip_sys)[0].acc_strain;
+    for (Slip &slip_component : slip_sys) os << ',' << slip_component.rss;
+    os << endl;
+}
+
 void Grain::print_accstrain(ofstream &os){
     os << strain_tensor(0,0) << ',' << strain_tensor(1,1) << ','  << strain_tensor(2,2);
     for (Slip &slip_component : slip_sys) os << ',' << slip_component.acc_strain;

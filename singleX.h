@@ -24,7 +24,7 @@ typedef Matrix<double, 6, 6> Matrix6d;
 // [global variables]
 extern double timestep, substep, dtime, m, max_strain, temperature, outputstep, norm_time;
 extern int flag_harden;
-extern ofstream stress_file, disloc_file, crss_file, stress_step_file, disloc_step_file, disloc_step_file, euler_file, custom_output_file, accstrain_file, schmidt_file, disvel_file,time_step_file;
+extern ofstream stress_file, disloc_file, crss_file, rss_file, stress_step_file, disloc_step_file, disloc_step_file, euler_file, custom_output_file, accstrain_file, schmidt_file, disvel_file,time_step_file;
 extern string sxfile_path, loadfile_path, configure_path;
 extern Matrix6d strain_modi_tensor;
 extern Matrix<double,9,9> bc_modi_matrix, vel_to_dw_matrix;
@@ -86,10 +86,23 @@ public:
     Vector3d burgers_vec, plane_norm, plane_norm_disp;
     Matrix3d schmidt;
     int num = -1; bool flag_active;
+    /*
+     * [velocity parameters] 
+     *  1. MFP control coeffient, 2. reference frequency, 3. activation energy, 4. slip resistance, 5. energy exponent
+     *  6. saturated speed, 7. drag coefficient
+     *
+     * [hardening parameters] 
+     *  8. forest hardening coefficient
+     *
+     * [DD evolution parameters] 
+     *  0. SSD_density, 9. nucleation coefficient, 10. multiplication coefficient, 11. drag stress D, 12. reference strain rate, 13. c/g 
+     */
     vector<double> harden_params;
-    vector<double> update_params, latent_params;
+    //update_params: 0: burgers, 1: mean_free_path, 2: disl_density_resist, 3: forest_stress
+    vector<double> update_params; 
+    vector<double> latent_params;
     double ref_strain_rate = 0.001, rate_sen = m, strain_rate_slip, ddgamma_dtau, shear_modulus, SSD_density, crss, acc_strain, disl_vel, rho_sat = 0.0, custom_var = 0.0, drag_stress = 0.0;
-    double ref_rate = 0.0, rho_mov = 0.0, crss_factor = 0.0, rho_init=0.0, rho_H = 0.0;
+    double ref_rate = 0.0, rho_mov = 0.0, crss_factor = 0.0, rho_init=0.0, rho_H = 0.0, rss = 0.0;
     double t_wait = 0.0, t_run = 0.0;
     Slip();
     Slip(int slip_num, Vector6d &slip_info, vector<double> &hardens, vector<double> &latents, Matrix3d lattice_vec, double f_active);
@@ -138,6 +151,7 @@ public:
     void print_stress_strain_screen();
     void print_dislocation(ofstream &os);
     void print_crss(ofstream &os);
+    void print_rss(ofstream &os);
     void print_accstrain(ofstream &os);
     void print_euler(ofstream &os);
     void print_schmidt(ofstream &os);
