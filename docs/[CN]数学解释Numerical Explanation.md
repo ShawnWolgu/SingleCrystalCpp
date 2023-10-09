@@ -14,37 +14,28 @@ $$
 
 两者之间的关系为：
 
-$$
-\dot{\mathbf{F}}=\mathbf{l}\mathbf{F}\\\mathbf{F}=\mathbf{F}^e\mathbf{F}^p
-$$
-
-$$
-\begin{align*}
-\mathbf{l}=\dot{\mathbf{F}}\mathbf{F}^{-1}=\dot{\mathbf{F}^e}(\mathbf{F}^e)^{-1}+\mathbf{F}^e\dot{\mathbf{F}^p}(\mathbf{F}^p)^{-1}(\mathbf{F}^e)^{-1}\\\mathbf{l}^e=\dot{\mathbf{F}^e}(\mathbf{F}^e)^{-1}\\\mathbf{l}^p=\mathbf{F}^e\dot{\mathbf{F}^p}(\mathbf{F}^p)^{-1}(\mathbf{F}^e)^{-1}
-\end{align*}
-$$
+$$ \dot{\mathbf{F}}=\mathbf{l}\mathbf{F} $$
+$$ \mathbf{F}=\mathbf{F}^e\mathbf{F}^p $$
+$$ \mathbf{l}=\dot{\mathbf{F}}\mathbf{F}^{-1}=\dot{\mathbf{F}^e}(\mathbf{F}^e)^{-1}+\mathbf{F}^e\dot{\mathbf{F}^p}(\mathbf{F}^p)^{-1}(\mathbf{F}^e)^{-1}$$
+$$ \mathbf{l}^e=\dot{\mathbf{F}^e}(\mathbf{F}^e)^{-1}$$
+$$ \mathbf{l}^p=\mathbf{F}^e\dot{\mathbf{F}^p}(\mathbf{F}^p)^{-1}(\mathbf{F}^e)^{-1}$$
 
 对每一个速度梯度，都有其对称部分（应变率张量）与反对称部分（旋率张量）：
 
-$$
-\displayline{
-\mathbf{l}=\mathbf{d}+\mathbf{w}\\
-\mathbf{l}^e=\mathbf{d}^e+\mathbf{w}^e\\
-\mathbf{l}^p=\mathbf{d}^p+\mathbf{w}^p}
-$$
+$$ \mathbf{l}=\mathbf{d}+\mathbf{w} $$
+$$ \mathbf{l}^e=\mathbf{d}^e+\mathbf{w}^e $$
+$$ \mathbf{l}^p=\mathbf{d}^p+\mathbf{w}^p} $$
 
 在每一步求解时，晶粒的变形相关张量（应变，取向矩阵）更新：
 
-$$
-\mathbf{\varepsilon}_{t+\Delta t}=\mathbf{\varepsilon}_t+\mathbf{d}\Delta t \\ 
-\mathbf{M}_{t+\Delta t}=\mathbf{M}_{t}(\mathbf{I}+\mathbf{w}^e\Delta t)^T
-$$
+$$ \mathbf{\varepsilon}_{t+\Delta t}=\mathbf{\varepsilon}_t+\mathbf{d}\Delta t  $$
+$$ \mathbf{M}_{t+\Delta t}=\mathbf{M}_{t}(\mathbf{I}+\mathbf{w}^e\Delta t)^T $$
 
 这里晶粒的取向矩阵为
 
-$$
-\mathbf{M}=\left(\begin{matrix}u &m&h\\v&n&k\\w&o&l\end{matrix}\right)
-$$
+$$ \mathbf{M}=\begin{bmatrix} u & m & h \\
+v & n & k \\
+w & o & l \end{bmatrix} $$
 
 代表参考坐标系的x，y，z三轴分别对应晶粒坐标系下的$(uvw),(mno),(hkl)$
 
@@ -66,15 +57,16 @@ $$
 \dot{\mathbf{\sigma}}-\mathbf{w}^e\mathbf{\sigma}+\mathbf{\sigma}\mathbf{w}^e+\mathbf{\sigma} tr(\mathbf{d}^e)=\mathbb{C}:\mathbf{d}^e
 $$
 
-$$
-\dot\sigma=\mathbf{C}(d-d_p)-\sigma tr(d)+w_e\sigma-\sigma w_e\\=\mathbf{C}d-\sigma tr(d) + w\sigma - \sigma w - \mathbf{C}d_p - w_p\sigma +  \sigma w_p
-$$
+$$ \dot\sigma=\mathbf{C}(d-d_p)-\sigma tr(d)+w_e\sigma-\sigma w_e $$
+$$ =\mathbf{C}d-\sigma tr(d) + w\sigma - \sigma w - \mathbf{C}d_p - w_p\sigma +  \sigma w_p $$
 
 ### 收敛求解：牛顿迭代法
 
 $$
-\begin{align*}f(X)&=(\mathbf{C}d-\sigma tr(d) + \mathbf{\Sigma} w - \mathbf{C}d_p -   \mathbf{\Sigma} w_p - \dot{\sigma})dt\\&=(\mathbf{C}d-\sigma tr(d) + \mathbf{\Sigma} w - \mathbf{C}d_p -   \mathbf{\Sigma} w_p)dt - \Delta\sigma\end{align*}\\X=(w,d,\Delta\sigma)
+\begin{align*}f(X)&=(\mathbf{C}d-\sigma tr(d) + \mathbf{\Sigma} w - \mathbf{C}d_p -   \mathbf{\Sigma} w_p - \dot{\sigma})dt \\ 
+&=(\mathbf{C}d-\sigma tr(d) + \mathbf{\Sigma} w - \mathbf{C}d_p -   \mathbf{\Sigma} w_p)dt - \Delta\sigma\end{align*} 
 $$
+$$ X=(w,d,\Delta\sigma) $$
 
 式中：
 
