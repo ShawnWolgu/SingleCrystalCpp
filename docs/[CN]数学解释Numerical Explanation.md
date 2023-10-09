@@ -72,8 +72,12 @@ $$ X=(w,d,\Delta\sigma) $$
 式中：
 
 $$
-\mathbf{\Sigma}=\begin{pmatrix}0&\sigma_5&\sigma_6\\ \sigma_4&0&-\sigma_6\\ -\sigma_4&-\sigma_5&0\\ \frac12(\sigma_3-\sigma_2)&-\frac12\sigma_6&-\frac12\sigma_5\\ -\frac12\sigma_6&\frac12(\sigma_3-\sigma_1)&\frac12\sigma_4\\ \frac12\sigma_5&\frac12\sigma_4&\frac12(\sigma_2-\sigma_1
-)\end{pmatrix}
+\mathbf{\Sigma}=\begin{pmatrix} 0 & \sigma_5 & \sigma_6 \\\\
+\sigma_4 & 0 & -\sigma_6 \\\\
+-\sigma_4 & -\sigma_5 & 0 \\\\ 
+\frac12(\sigma_3-\sigma_2) & -\frac12\sigma_6 & -\frac12\sigma_5\\\\
+-\frac12\sigma_6 & \frac12(\sigma_3-\sigma_1) & \frac12\sigma_4\\\\
+\frac12\sigma_5 & \frac12\sigma_4 & \frac12(\sigma_2-\sigma_1) \end{pmatrix}
 $$
 
 则梯度：
