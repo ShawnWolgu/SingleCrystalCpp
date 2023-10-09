@@ -17,8 +17,9 @@
 * 加载与边界条件
 
 ## 使用说明
-[输入参数格式](./docs/[CN]输入文件格式参考Input File Format.md)
-[模型数学解释](./docs/%5BCN%5D%E6%95%B0%E5%AD%A6%E8%A7%A3%E9%87%8ANumerical%20Explanation.md)
+[输入参数格式](/docs/%5BCN%5D%E8%BE%93%E5%85%A5%E6%96%87%E4%BB%B6%E6%A0%BC%E5%BC%8F%E5%8F%82%E8%80%83Input%20File%20Format.md)
+
+[模型数学解释](/docs/%5BCN%5D%E6%95%B0%E5%AD%A6%E8%A7%A3%E9%87%8ANumerical%20Explanation.md)
 
 
 # SingleCrystalCpp
@@ -41,4 +42,5 @@ A simple crystal plasticity model for single crystal, developed in C++.
 
 ## Usage
 [Input File Format (in Chinese)](/docs/%5BCN%5D%E8%BE%93%E5%85%A5%E6%96%87%E4%BB%B6%E6%A0%BC%E5%BC%8F%E5%8F%82%E8%80%83Input%20File%20Format.md) 
+
 [Model Explanation (in Chinese)](/docs/%5BCN%5D%E6%95%B0%E5%AD%A6%E8%A7%A3%E9%87%8ANumerical%20Explanation.md)

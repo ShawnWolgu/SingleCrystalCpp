@@ -2,7 +2,7 @@
 
 # 晶体的变形
 
-变形梯度张量$\mathbf{F}$与速度梯度$\bf{l}$：
+变形梯度张量 $\mathbf{F}$ 与速度梯度 $\bf{l}$ ：
 
 $$
 \bf{F}=\frac{\partial\bf{{x}}}{\partial\bf{{X}}}
