@@ -29,6 +29,7 @@ $$ \mathbf{l}^p=\mathbf{d}^p+\mathbf{w}^p} $$
 在每一步求解时，晶粒的变形相关张量（应变，取向矩阵）更新：
 
 $$ \mathbf{\varepsilon}_{t+\Delta t}=\mathbf{\varepsilon}_t+\mathbf{d}\Delta t $$
+
 $$ \mathbf{M}_{t+\Delta t}=\mathbf{M}_{t}(\mathbf{I}+\mathbf{w}^e\Delta t)^T $$
 
 这里晶粒的取向矩阵为
