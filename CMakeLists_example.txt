@@ -1,0 +1,20 @@
+cmake_minimum_required(VERSION 3.23)
+
+# set(CMAKE_C_COMPILER "path/to/your/ccompiler")
+# set(CMAKE_CXX_COMPILER "path/to/your/cppcompiler")
+
+project(SINGLEX)
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+set(CMAKE_BUILD_TYPE Debug)
+set(CMAKE_CXX_FLAGS_DEBUG "-O3")
+
+# You have to set these variables as Windows environment variables:
+SET( EIGEN3_INCLUDE_DIR "path/to/Eigen3" )
+SET( TCLAP_INCLUDE_DIR "path/to/tclap" )
+find_package( Eigen3 3.3 REQUIRED )
+
+# include_directories is needed for the compiler to know where looking for Eigen3 header files to be included 
+include_directories( ${EIGEN3_INCLUDE_DIR} ${TCLAP_INCLUDE_DIR} )
+
+add_executable(SXCpp main.cpp Slip.cpp Grain.cpp disvel.cpp func.cpp global.cpp load.cpp read_input.cpp write_output.cpp singleX.h)

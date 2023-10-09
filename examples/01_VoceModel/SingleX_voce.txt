@@ -28,6 +28,6 @@
  1  1 -1        0.5  0  0.5   1.0 
  1  1 -1        0.5 -0.5  0    
  40 12 70 20
-#SSD_density freq_Debye c_length Q_ref T_ref tau_P alpha v_s c_drag c_back c_multi v_c D ref_srate gg
+#t0, t1, h0, h1
  1 1 1 1 1
 #N HL CJ GJ SJ
