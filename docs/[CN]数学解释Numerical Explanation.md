@@ -28,7 +28,7 @@ $$ \mathbf{l}^p=\mathbf{d}^p+\mathbf{w}^p} $$
 
 在每一步求解时，晶粒的变形相关张量（应变，取向矩阵）更新：
 
-$$ \mathbf{\varepsilon}_{t+\Delta t}=\mathbf{\varepsilon}_t+\mathbf{d}\Delta t  $$
+$$ \mathbf{\varepsilon}_{t+\Delta t}=\mathbf{\varepsilon}_t+\mathbf{d}\Delta t $$
 $$ \mathbf{M}_{t+\Delta t}=\mathbf{M}_{t}(\mathbf{I}+\mathbf{w}^e\Delta t)^T $$
 
 这里晶粒的取向矩阵为
@@ -58,7 +58,7 @@ $$
 $$
 
 $$ \dot\sigma=\mathbf{C}(d-d_p)-\sigma tr(d)+w_e\sigma-\sigma w_e $$
-$$ =\mathbf{C}d-\sigma tr(d) + w\sigma - \sigma w - \mathbf{C}d_p - w_p\sigma +  \sigma w_p $$
+$$ =\mathbf{C}d-\sigma tr(d) + w\sigma - \sigma w - \mathbf{C}d_p - w_p\sigma + \sigma w_p $$
 
 ### 收敛求解：牛顿迭代法
 
@@ -71,7 +71,7 @@ $$ X=(w,d,\Delta\sigma) $$
 式中：
 
 $$
-\mathbf{\Sigma}=\begin{pmatrix}0&\sigma_5&\sigma_6\\\sigma_4&0&-\sigma_6\\-\sigma_4&-\sigma_5&0\\\frac12(\sigma_3-\sigma_2)&-\frac12\sigma_6&-\frac12\sigma_5\\-\frac12\sigma_6&\frac12(\sigma_3-\sigma_1)&\frac12\sigma_4\\\frac12\sigma_5&\frac12\sigma_4&\frac12(\sigma_2-\sigma_1
+\mathbf{\Sigma}=\begin{pmatrix}0&\sigma_5&\sigma_6\\ \sigma_4&0&-\sigma_6\\ -\sigma_4&-\sigma_5&0\\ \frac12(\sigma_3-\sigma_2)&-\frac12\sigma_6&-\frac12\sigma_5\\ -\frac12\sigma_6&\frac12(\sigma_3-\sigma_1)&\frac12\sigma_4\\ \frac12\sigma_5&\frac12\sigma_4&\frac12(\sigma_2-\sigma_1
 )\end{pmatrix}
 $$
 
@@ -87,31 +87,31 @@ $$
 
 为了表述与code对应，将张量写为6维形式：
 
-$$
-\frac{\partial f(X)}{\partial \Delta \sigma}=-I-C\frac{\partial\tilde{d_p}}{\partial \Delta\sigma}-\Sigma N^{-1}\frac{\partial\tilde{w_p^*}}{\partial \Delta\sigma}\\=-I-C(M_{cpl}\frac{\partial\tilde{d_p}^c}{\partial \Delta\sigma^c}M_{cpl}^T)-\Sigma N^{-1}(M_{cpl}\frac{\partial\tilde{d_p^{*c}}}{\partial \Delta\sigma^c}M_{cpl}^T)_{4:6}
-$$
+$$ \frac{\partial f(X)}{\partial \Delta \sigma}=-I-C\frac{\partial\tilde{d_p}}{\partial \Delta\sigma}-\Sigma N^{-1}\frac{\partial\tilde{w_p^*}}{\partial \Delta\sigma} $$
+$$ =-I-C(M_{cpl}\frac{\partial\tilde{d_p}^c}{\partial \Delta\sigma^c}M_{cpl}^T)-\Sigma N^{-1}(M_{cpl}\frac{\partial\tilde{d_p^{*c}}}{\partial \Delta\sigma^c}M_{cpl}^T)_{4:6} $$
 
 式中：
 
-$$
-\tilde{d_p} = [\begin{matrix}d_1&d_2&d_3&2d_{23}&2d_{13}&2d
-_{12}\end{matrix}] \\\tilde{w_p^*}=[\begin{matrix}0&0&0&2w_{23}&2w_{13}&2w
-_{12}\end{matrix}]
-$$
+$$ \tilde{d_p} = \begin{bmatrix} d_1 & d_2 &d_3 & 2d_{23} & 2d_{13} & 2d_{12} \end{bmatrix}] $$
+$$ \tilde{w_p^*} = \begin{bmatrix} 0 & 0 & 0 & 2w_{23} & 2w_{13} & 2w_{12} \end{bmatrix}] $$
 
-c上标代表在晶格坐标系，$M_{cpl}$为对应的6阶柔度张量旋转阵。
+c上标代表在晶格坐标系， $M_{cpl}$ 为对应的6阶柔度张量旋转阵。
 
 $$
-S = [\begin{matrix}                                                                        s_1n_1&s_2n_2&s_3n_3&(s_2n_3+s_3n_2)&(s_1n_3+s_3n_1)&(s_1n_2+s_2n_1)\end{matrix}]^T\\A = [\begin{matrix}                                                                        0&0&0&(s_2n_3-s_3n_2)&(s_1n_3-s_3n_1)&(s_1n_2-s_2n_1)\end{matrix}]^T\\\frac{\partial{d_p^c}}{\partial \Delta\sigma^c}=SS^T\frac{\partial\dot\gamma dt}{\partial\tau}\\\frac{\partial{w_p^c}}{\partial \Delta\sigma^c}=AS^T \frac{\partial\dot\gamma dt}{\partial\tau}
+S = [\begin{matrix}                                                                        s_1n_1&s_2n_2&s_3n_3&(s_2n_3+s_3n_2)&(s_1n_3+s_3n_1)&(s_1n_2+s_2n_1)\end{matrix}]^T\\
+A = [\begin{matrix}                                                                        0&0&0&(s_2n_3-s_3n_2)&(s_1n_3-s_3n_1)&(s_1n_2-s_2n_1)\end{matrix}]^T\\
+\frac{\partial{d_p^c}}{\partial \Delta\sigma^c}=SS^T\frac{\partial\dot\gamma dt}{\partial\tau}\\
+\frac{\partial{w_p^c}}{\partial \Delta\sigma^c}=AS^T \frac{\partial\dot\gamma dt}{\partial\tau}
 $$
 
 对于不同的边界条件设定，有
 
 $$
-\begin{pmatrix}d\\w\\\Delta\sigma\end{pmatrix}_{15*1}=\begin{pmatrix}I_{3*3}&0&0&0_{3*6}\\0&0.5I_{3*3}&0.5I_{3*3}&0_{3*6}\\0&0.5I_{3*3}&-0.5I_{3*3}&0_{3*6}\\0&0&0&I_{6*6}\end{pmatrix}_{15*15}\begin{pmatrix}L\\\Delta\sigma\end{pmatrix}_{15*1}
+\begin{pmatrix}d \\ w \\ \Delta\sigma\end{pmatrix}_{15*1} = \begin{pmatrix} I_{3*3} & 0 & 0 & 0_{3*6} \\ 0 & 0.5I_{3*3} & 0.5I_{3*3} & 0_{3*6} \\ 0 & 0.5I_{3*3} & -0.5I_{3*3} & 0_{3*6} \\
+0 & 0 & 0 & I_{6*6} \end{pmatrix}_{15*15} \begin{pmatrix} L \\ \Delta \sigma \end{pmatrix}_{15*1}
 $$
 
-得到目标函数$f(X)=0$与梯度$\partial f(X)/\partial X$之后，即可根据牛顿迭代法求$X$，即
+得到目标函数 $f(X)=0$ 与梯度 $\partial f(X)/\partial X$ 之后，即可根据牛顿迭代法求 $X$ ，即
 
 $$
 X_{n+1}= X_n + \frac{f(X)}{\partial f(X)/\partial X}
@@ -123,7 +123,7 @@ $$
 X_{n+1}= X_n + c\cdot\frac{f(X)}{\partial f(X)/\partial X}
 $$
 
-- 若$|f_{n+1}|/|f_n|>1$，令$c=1/2c$，并重算本步；若$|Y_{n+1}|/|Y_n|\le1$，令$c=1$；
+- 若 $|f_{n+1}|/|f_n|>1$ ，令 $c=1/2c$ ，并重算本步；若 $|Y_{n+1}|/|Y_n|\le1$ ，令 $c=1$ ；
 
 # 塑性变形机制
 
