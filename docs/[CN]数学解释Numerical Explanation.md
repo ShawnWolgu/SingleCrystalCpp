@@ -19,7 +19,9 @@ $$
 $$
 
 $$
+\begin{align*}
 \mathbf{l}=\dot{\mathbf{F}}\mathbf{F}^{-1}=\dot{\mathbf{F}^e}(\mathbf{F}^e)^{-1}+\mathbf{F}^e\dot{\mathbf{F}^p}(\mathbf{F}^p)^{-1}(\mathbf{F}^e)^{-1}\\\mathbf{l}^e=\dot{\mathbf{F}^e}(\mathbf{F}^e)^{-1}\\\mathbf{l}^p=\mathbf{F}^e\dot{\mathbf{F}^p}(\mathbf{F}^p)^{-1}(\mathbf{F}^e)^{-1}
+\end{align*}
 $$
 
 对每一个速度梯度，都有其对称部分（应变率张量）与反对称部分（旋率张量）：
