@@ -15,15 +15,21 @@ $$
 两者之间的关系为：
 
 $$ \dot{\mathbf{F}}=\mathbf{l}\mathbf{F} $$
+
 $$ \mathbf{F}=\mathbf{F}^e\mathbf{F}^p $$
+
 $$ \mathbf{l}=\dot{\mathbf{F}}\mathbf{F}^{-1}=\dot{\mathbf{F}^e}(\mathbf{F}^e)^{-1}+\mathbf{F}^e\dot{\mathbf{F}^p}(\mathbf{F}^p)^{-1}(\mathbf{F}^e)^{-1}$$
+
 $$ \mathbf{l}^e=\dot{\mathbf{F}^e}(\mathbf{F}^e)^{-1}$$
+
 $$ \mathbf{l}^p=\mathbf{F}^e\dot{\mathbf{F}^p}(\mathbf{F}^p)^{-1}(\mathbf{F}^e)^{-1}$$
 
 对每一个速度梯度，都有其对称部分（应变率张量）与反对称部分（旋率张量）：
 
 $$ \mathbf{l}=\mathbf{d}+\mathbf{w} $$
+
 $$ \mathbf{l}^e=\mathbf{d}^e+\mathbf{w}^e $$
+
 $$ \mathbf{l}^p=\mathbf{d}^p+\mathbf{w}^p} $$
 
 在每一步求解时，晶粒的变形相关张量（应变，取向矩阵）更新：
@@ -59,6 +65,7 @@ $$
 $$
 
 $$ \dot\sigma=\mathbf{C}(d-d_p)-\sigma tr(d)+w_e\sigma-\sigma w_e $$
+
 $$ =\mathbf{C}d-\sigma tr(d) + w\sigma - \sigma w - \mathbf{C}d_p - w_p\sigma + \sigma w_p $$
 
 ### 收敛求解：牛顿迭代法
@@ -67,6 +74,7 @@ $$
 \begin{align*}f(X)&=(\mathbf{C}d-\sigma tr(d) + \mathbf{\Sigma} w - \mathbf{C}d_p -   \mathbf{\Sigma} w_p - \dot{\sigma})dt \\ 
 &=(\mathbf{C}d-\sigma tr(d) + \mathbf{\Sigma} w - \mathbf{C}d_p -   \mathbf{\Sigma} w_p)dt - \Delta\sigma\end{align*} 
 $$
+
 $$ X=(w,d,\Delta\sigma) $$
 
 式中：
@@ -93,11 +101,13 @@ $$
 为了表述与code对应，将张量写为6维形式：
 
 $$ \frac{\partial f(X)}{\partial \Delta \sigma}=-I-C\frac{\partial\tilde{d_p}}{\partial \Delta\sigma}-\Sigma N^{-1}\frac{\partial\tilde{w_p^*}}{\partial \Delta\sigma} $$
+
 $$ =-I-C(M_{cpl}\frac{\partial\tilde{d_p}^c}{\partial \Delta\sigma^c}M_{cpl}^T)-\Sigma N^{-1}(M_{cpl}\frac{\partial\tilde{d_p^{*c}}}{\partial \Delta\sigma^c}M_{cpl}^T)_{4:6} $$
 
 式中：
 
 $$ \tilde{d_p} = \begin{bmatrix} d_1 & d_2 &d_3 & 2d_{23} & 2d_{13} & 2d_{12} \end{bmatrix}] $$
+
 $$ \tilde{w_p^*} = \begin{bmatrix} 0 & 0 & 0 & 2w_{23} & 2w_{13} & 2w_{12} \end{bmatrix}] $$
 
 c上标代表在晶格坐标系， $M_{cpl}$ 为对应的6阶柔度张量旋转阵。
@@ -141,7 +151,9 @@ $$
 塑性速度梯度的计算
 
 $$ \mathbf{l}^p=\Sigma_\alpha\dot\gamma^\alpha \mathbf{s}^\alpha \mathbf{n}^{\alpha T}  $$
+
 $$ \mathbf{s}^\alpha=\mathbf{F}^e\mathbf{s}_0^\alpha $$
+
 $$ \mathbf{n}^\alpha=(\mathbf{F}^{e-1})^{T}\mathbf{n}_0^\alpha $$
 
 位错速度与分切应力
@@ -163,7 +175,9 @@ $$
 式中 $\tau_f$ 为强钉扎力，而 $\tau_c$ 为弱钉扎力。对于不同的材料体系，两者的组成是不同的，例如一些FCC结构中可以考虑Peierls Barrier为弱作用，而dislocation junction为强作用。上式对应的梯度形式为：
 
 $$ \frac{\partial t_w}{\partial\tau}=-\frac{1}{\nu_0kT}\exp(\frac{Q_a}{kT})\frac{\partial Q_a}{\partial\tau}; $$
+
 $$ \frac{\partial Q_a}{\partial\tau}=-\text{sgn}(\tau)\xi Q_0(\frac{||\tau|-\tau_c|}{\tau_o})^{\xi-1} $$
+
 $$ \frac{\partial t_r}{\partial \tau}=-\text{sgn}(\tau)\frac{2bL}{v_m^2B_0}\frac{v_s^2}{v_m^2}(1-\frac{v_s}{v_m\sqrt{1+\left(\frac{v_s}{v_m}\right)^2}}) $$
 
 ### 一些尝试过又废弃的形式
@@ -191,7 +205,9 @@ $$
 或者：
 
 $$ t_w=[\nu_D\frac {b^2 l}{\Omega_k}\exp(- Q_s/k_BT)]^{-1} $$
+
 $$ Q_s=(Q_0) [1-(\frac{|\tau|-\tau_b} {\tau_P})^\alpha],Q_0>2k_BT $$
+
 $$ \Omega_k=\frac{Q_0}{\tau_P},\tau_c=\tau_P+\tau_b $$
 
 对应的梯度改变为： 
@@ -205,7 +221,9 @@ $$
 $\rho_h$ 代表了其他滑移系位错对当前滑移系的阻碍作用，表示排他性； $\rho_J$  代表了当前滑移系位错水平对交互作用的贡献，允许当前滑移系在位错水平较低时降低交互作用的阻碍性。
 
 $$ \tau_c = \tau_P + c_b b G \sqrt{\rho_h + \rho_J} $$
+
 $$ \rho_J = \sum_{\beta\neq\alpha} {h^{\alpha\beta} \sqrt{\rho^\beta_s\rho^\alpha_s}},\rho_s=\rho-\rho_0 $$
+
 $$ \rho_h = \sum h^{\alpha\beta} \rho^\beta_e , \rho_e = \rho + \text{min} (\rho^\beta, \rho^\gamma), \alpha, \beta, \gamma \text{ are coplanar slips.} $$
 
 为了判断滑移系属于哪种情况，且避免一开始就输入一个巨大的矩阵，还要与滑移系一一对应，还是通过几何条件判断确定 $f^{\alpha\beta}$ 的分类与取值：
