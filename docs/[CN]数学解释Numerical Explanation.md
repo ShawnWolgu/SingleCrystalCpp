@@ -27,9 +27,10 @@ $$
 对每一个速度梯度，都有其对称部分（应变率张量）与反对称部分（旋率张量）：
 
 $$
+\displayline{
 \mathbf{l}=\mathbf{d}+\mathbf{w}\\
 \mathbf{l}^e=\mathbf{d}^e+\mathbf{w}^e\\
-\mathbf{l}^p=\mathbf{d}^p+\mathbf{w}^p
+\mathbf{l}^p=\mathbf{d}^p+\mathbf{w}^p}
 $$
 
 在每一步求解时，晶粒的变形相关张量（应变，取向矩阵）更新：
