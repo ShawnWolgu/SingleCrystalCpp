@@ -205,7 +205,7 @@ $$
 $\rho_h$ 代表了其他滑移系位错对当前滑移系的阻碍作用，表示排他性； $\rho_J$  代表了当前滑移系位错水平对交互作用的贡献，允许当前滑移系在位错水平较低时降低交互作用的阻碍性。
 
 $$ \tau_c = \tau_P + c_b b G \sqrt{\rho_h + \rho_J} $$
-$$ \rho_J = \sum_{\beta\neq\alpha} {h^{\alpha\beta} \sqrt{\rho^\beta_*\rho^\alpha_*}},\rho_*=\rho-\rho_0 $$
+$$ \rho_J = \sum_{\beta\neq\alpha} {h^{\alpha\beta} \sqrt{\rho^\beta_\*\rho^\alpha_\*}},\rho_*=\rho-\rho_0 $$
 $$ \rho_h = \sum h^{\alpha\beta} \rho^\beta_e , \rho_e = \rho + \text{min} (\rho^\beta, \rho^\gamma), \alpha, \beta, \gamma \text{ are coplanar slips.} $$
 
 为了判断滑移系属于哪种情况，且避免一开始就输入一个巨大的矩阵，还要与滑移系一一对应，还是通过几何条件判断确定 $f^{\alpha\beta}$ 的分类与取值：
