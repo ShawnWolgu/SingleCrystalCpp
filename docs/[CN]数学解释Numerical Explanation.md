@@ -102,18 +102,22 @@ $$ \tilde{w_p^*} = \begin{bmatrix} 0 & 0 & 0 & 2w_{23} & 2w_{13} & 2w_{12} \end{
 
 c上标代表在晶格坐标系， $M_{cpl}$ 为对应的6阶柔度张量旋转阵。
 
-$$
-S = [\begin{matrix}                                                                        s_1n_1&s_2n_2&s_3n_3&(s_2n_3+s_3n_2)&(s_1n_3+s_3n_1)&(s_1n_2+s_2n_1)\end{matrix}]^T\\
-A = [\begin{matrix}                                                                        0&0&0&(s_2n_3-s_3n_2)&(s_1n_3-s_3n_1)&(s_1n_2-s_2n_1)\end{matrix}]^T\\
-\frac{\partial{d_p^c}}{\partial \Delta\sigma^c}=SS^T\frac{\partial\dot\gamma dt}{\partial\tau}\\
-\frac{\partial{w_p^c}}{\partial \Delta\sigma^c}=AS^T \frac{\partial\dot\gamma dt}{\partial\tau}
-$$
+$$ S = \begin{pmatrix} s_1 n_1 & s_2 n_2 & s_3 n_3 & (s_2 n_3 + s_3 n_2) & (s_1 n_3 + s_3 n_1) & (s_1 n_2 + s_2 n_1) \end{pmatrix}^T $$
+
+$$ A = \begin{pmatrix} 0 & 0 & 0 & (s_2 n_3 - s_3 n_2) & (s_1 n_3 - s_3 n_1) & (s_1 n_2 - s_2 n_1) \end{pmatrix}^T $$
+
+$$ \frac{\partial{d_p^c}}{\partial \Delta\sigma^c}=SS^T\frac{\partial\dot\gamma dt}{\partial\tau} $$
+
+$$ \frac{\partial{w_p^c}}{\partial \Delta\sigma^c}=AS^T \frac{\partial\dot\gamma dt}{\partial\tau} $$
 
 对于不同的边界条件设定，有
 
 $$
-\begin{pmatrix}d \\ w \\ \Delta\sigma\end{pmatrix}_{15*1} = \begin{pmatrix} I_{3*3} & 0 & 0 & 0_{3*6} \\ 0 & 0.5I_{3*3} & 0.5I_{3*3} & 0_{3*6} \\ 0 & 0.5I_{3*3} & -0.5I_{3*3} & 0_{3*6} \\
-0 & 0 & 0 & I_{6*6} \end{pmatrix}_{15*15} \begin{pmatrix} L \\ \Delta \sigma \end{pmatrix}_{15*1}
+\begin{pmatrix} d \\\\ w \\\\ \Delta \sigma \end{pmatrix}_{15*1} 
+= \begin{pmatrix} I_{3*3} & 0 & 0 & 0_{3*6} \\\\ 0 & 0.5I_{3*3} & 0.5I_{3*3} & 0_{3*6} \\\\
+0 & 0.5I_{3*3} & -0.5I_{3*3} & 0_{3*6} \\\\
+0 & 0 & 0 & I_{6*6} \end{pmatrix}_{15*15} \begin{pmatrix} L \\\\ 
+\Delta \sigma \end{pmatrix}_{15*1}
 $$
 
 得到目标函数 $f(X)=0$ 与梯度 $\partial f(X)/\partial X$ 之后，即可根据牛顿迭代法求 $X$ ，即
@@ -136,11 +140,9 @@ $$
 
 塑性速度梯度的计算
 
-$$
-\mathbf{l}^p=\Sigma_\alpha\dot\gamma^\alpha \mathbf{s}^\alpha \mathbf{n}^{\alpha T} \\
-\mathbf{s}^\alpha=\mathbf{F}^e\mathbf{s}_0^\alpha\\
-\mathbf{n}^\alpha=(\mathbf{F}^{e-1})^{T}\mathbf{n}_0^\alpha\\
-$$
+$$ \mathbf{l}^p=\Sigma_\alpha\dot\gamma^\alpha \mathbf{s}^\alpha \mathbf{n}^{\alpha T}  $$
+$$ \mathbf{s}^\alpha=\mathbf{F}^e\mathbf{s}_0^\alpha $$
+$$ \mathbf{n}^\alpha=(\mathbf{F}^{e-1})^{T}\mathbf{n}_0^\alpha $$
 
 位错速度与分切应力
 
@@ -151,16 +153,18 @@ $$
 目前对于式中的等待时间$t_w$与运动时间$t_r$的形式并没有绝对的统一形式，这里考虑到两种力的作用：强钉扎力与弱钉扎力。强钉扎力不受温度影响，弱钉扎力受到温度影响。则
 
 $$
-\begin{align*}&t_w=\frac{1}{\nu_0}\exp(\frac{Q_a}{k_BT}),\\&Q_a=Q_0[1-\text{sgn}(|\tau|-\tau_f)(\frac{||\tau|-\tau_f|}{\tau_c})^\xi]\\&t_r=L \left(v_{s}\left[\sqrt{1+\left(\frac{v_{s}}{v_m}\right)^{2}}-{\frac{v_s}{v_m}}\right]\right)^{-1},\\&
-v_m=\frac{2b}{B_0}|\tau-\tau_f|，
-B_{0}=\frac{c_{d} K_{\mathrm{B}} T}{v_{s} b^{\alpha^{2}}}\\\end{align*}
+\begin{align*} & t_w= \frac{1}{\nu_0} \exp(\frac{Q_a}{k_BT}), \\\\
+&Q_a = Q_0[1-\text{sgn}(|\tau|-\tau_f)(\frac{||\tau|-\tau_f|}{\tau_c})^\xi] \\\\ 
+&t_r=L \left(v_{s}\left[\sqrt{1+\left(\frac{v_{s}}{v_m}\right)^{2}}-{\frac{v_s}{v_m}}\right]\right)^{-1},\\\\
+&v_m=\frac{2b}{B_0}|\tau-\tau_f|，B_{0}=\frac{c_{d} K_{\mathrm{B}} T}{v_{s} b^{\alpha^{2}}}\\\\
+\end{align*}
 $$
 
-式中$\tau_f$为强钉扎力，而$\tau_c$为弱钉扎力。对于不同的材料体系，两者的组成是不同的，例如一些FCC结构中可以考虑Peierls Barrier为弱作用，而dislocation junction为强作用。上市对应的梯度形式为：
+式中 $\tau_f$ 为强钉扎力，而 $\tau_c$ 为弱钉扎力。对于不同的材料体系，两者的组成是不同的，例如一些FCC结构中可以考虑Peierls Barrier为弱作用，而dislocation junction为强作用。上式对应的梯度形式为：
 
-$$
-\frac{\partial t_w}{\partial\tau}=-\frac{1}{\nu_0kT}\exp(\frac{Q_a}{kT})\frac{\partial Q_a}{\partial\tau};\frac{\partial Q_a}{\partial\tau}=-\text{sgn}(\tau)\xi Q_0(\frac{||\tau|-\tau_c|}{\tau_o})^{\xi-1}\\\frac{\partial t_r}{\partial \tau}=-\text{sgn}(\tau)\frac{2bL}{v_m^2B_0}\frac{v_s^2}{v_m^2}(1-\frac{v_s}{v_m\sqrt{1+\left(\frac{v_s}{v_m}\right)^2}})
-$$
+$$ \frac{\partial t_w}{\partial\tau}=-\frac{1}{\nu_0kT}\exp(\frac{Q_a}{kT})\frac{\partial Q_a}{\partial\tau}; $$
+$$ \frac{\partial Q_a}{\partial\tau}=-\text{sgn}(\tau)\xi Q_0(\frac{||\tau|-\tau_c|}{\tau_o})^{\xi-1} $$
+$$ \frac{\partial t_r}{\partial \tau}=-\text{sgn}(\tau)\frac{2bL}{v_m^2B_0}\frac{v_s^2}{v_m^2}(1-\frac{v_s}{v_m\sqrt{1+\left(\frac{v_s}{v_m}\right)^2}}) $$
 
 ### 一些尝试过又废弃的形式
 
@@ -186,9 +190,9 @@ $$
 
 或者：
 
-$$
-t_w=[\nu_D\frac {b^2 l}{\Omega_k}\exp(- Q_s/k_BT)]^{-1}\\ Q_s=(Q_0) [1-(\frac{|\tau|-\tau_b} {\tau_P})^\alpha],Q_0>2k_BT\\ \Omega_k=\frac{Q_0}{\tau_P},\tau_c=\tau_P+\tau_b
-$$
+$$ t_w=[\nu_D\frac {b^2 l}{\Omega_k}\exp(- Q_s/k_BT)]^{-1} $$
+$$ Q_s=(Q_0) [1-(\frac{|\tau|-\tau_b} {\tau_P})^\alpha],Q_0>2k_BT $$
+$$ \Omega_k=\frac{Q_0}{\tau_P},\tau_c=\tau_P+\tau_b $$
 
 对应的梯度改变为： 
 
@@ -198,15 +202,15 @@ $$
 
 # 硬化机制
 
-$**\rho_h$代表了其他滑移系位错对当前滑移系的阻碍作用，表示排他性；$\rho_J$代表了当前滑移系位错水平对交互作用的贡献，允许当前滑移系在位错水平较低时降低交互作用的阻碍性。**
+$\rho_h$ 代表了其他滑移系位错对当前滑移系的阻碍作用，表示排他性；$\rho_J$ 代表了当前滑移系位错水平对交互作用的贡献，允许当前滑移系在位错水平较低时降低交互作用的阻碍性。
 
-$$
-\tau_c=\tau_P+c_bbG\sqrt{\rho_h+\rho_J}\\\rho_J=\sum_{\beta\neq\alpha}{h^{\alpha\beta}\sqrt{\rho^\beta_*\rho^\alpha_*}},\rho_*=\rho-\rho_0\\\rho_h=\sum h^{\alpha\beta}\rho^\beta_e,\rho_e=\rho+min(\rho^\beta,\rho^\gamma),\alpha,\beta,\gamma \text{ are coplanar slips.}
-$$
+$$ \tau_c=\tau_P+c_bbG\sqrt{\rho_h+\rho_J} $$
+$$ \rho_J=\sum_{\beta\neq\alpha}{h^{\alpha\beta}\sqrt{\rho^\beta_*\rho^\alpha_*}},\rho_*=\rho-\rho_0 $$
+$$ \rho_h=\sum h^{\alpha\beta}\rho^\beta_e,\rho_e=\rho+min(\rho^\beta,\rho^\gamma),\alpha,\beta,\gamma \text{ are coplanar slips.} $$
 
-为了判断滑移系属于哪种情况，且避免一开始就输入一个巨大的矩阵，还要与滑移系一一对应，还是通过几何条件判断确定$f^{\alpha\beta}$的分类与取值：
+为了判断滑移系属于哪种情况，且避免一开始就输入一个巨大的矩阵，还要与滑移系一一对应，还是通过几何条件判断确定 $f^{\alpha\beta}$ 的分类与取值：
 
-1. 判断位错反应是否可以自发产生（Frank定理）$b^\alpha\cdot b^\beta\ne0$ ：是，继续，否则 H
+1. 判断位错反应是否可以自发产生（Frank定理） $b^\alpha\cdot b^\beta\ne0$  ：是，继续，否则 H
 2. 判断伯氏矢量是否平行 $|\cos<b^\alpha,b^\beta>|=1$ ： 是， N， 否则继续
 3. 判断是否共面 $|\cos<n^\alpha,n^\beta>|=1$ ： 是： C， 否则继续
 4. 判断新生位错是否可以在原滑移系滑移 $n^\alpha\cdot(b^\alpha+b^\beta)=0 || n^\beta\cdot(b^\alpha+b^\beta)=0$：是 G， 否 S
@@ -219,7 +223,7 @@ $$
 4. G，Glissile junction，生成的新位错伯氏矢量符合能量定理，且可以在原滑移面上滑移
 5. S，Sessile junction，生成的新位错伯氏矢量符合能量定理，但是不在原位错所在的两个滑移面上，无法滑移。
 
-上面的五种情况下，取协同硬化参数修正系数为$a_N,a_{HL},a_{CJ},a_{GJ},a_{SJ}$，则有：$a_{SJ}\gt a_{GJ} \gt a_{CJ} \gt a_{HL} \gt a_{N}$。
+上面的五种情况下，取协同硬化参数修正系数为 $a_N,a_{HL},a_{CJ},a_{GJ},a_{SJ}$ ，则有： $a_{SJ}\gt a_{GJ} \gt a_{CJ} \gt a_{HL} \gt a_{N}$ 。
 
 ### 饱和位错密度相关
 
@@ -235,4 +239,4 @@ $$
 d \rho=\left(k_{\rho, n u c} \frac{\left|\tau-\tau_{c, n u c}\right|}{G b^2}+\frac{k_{\rho, m u l}}{\bar{L}}\right)\left[1-\left(\frac{c_h b}{g}\left(1-\frac{k T}{D b^3} \log \frac{|\dot{\varepsilon}|}{\dot{\varepsilon}_0}\right)\right)^2 \rho\right] d \gamma
 $$
 
-上式中包含位错非均匀形核项$k_{\rho, n u c} \frac{\left|\tau-\tau_{c, n u c}\right|}{G b^2}$，增殖项$\frac{k_{\rho, m u l}}{\bar{L}}$，并控制最终的饱和位错密度水平。
+上式中包含位错非均匀形核项 $k_{\rho, n u c} \frac{\left|\tau-\tau_{c, n u c}\right|}{G b^2}$ ，增殖项 $\frac{k_{\rho, m u l}}{\bar{L}}$ ，并控制最终的饱和位错密度水平。
