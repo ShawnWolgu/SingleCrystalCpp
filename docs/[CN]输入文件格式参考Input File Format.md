@@ -164,11 +164,11 @@
     
 对于原先的转换矩阵，为：
 $$
-\begin{pmatrix} d \\\\ w \\\\ \Delta \sigma \end{pmatrix}_{15\times 1} 
-= \begin{pmatrix} I_{3\times 3} & 0 & 0 & 0_{3\times 6}\\\\ 
-0 & 0.5I_{3\times 3}&0.5I_{3\times 3}&0_{3\times 6}\\\\ 
-0 & 0.5I_{3\times 3}&-0.5I_{3\times 3}&0_{3\times 6}\\\\ 
-0&0&0&I_{6\times 6}\end{pmatrix}_{15\times 15}\begin{pmatrix}L\\\\ \Delta\sigma\end{pmatrix}_{15\times 1}
+\begin{pmatrix} d \\\\ w \\\\ \Delta \sigma \end{pmatrix}\_{15\times 1} 
+= \begin{pmatrix} I\_{3\times 3} & 0 & 0 & 0\_{3\times 6}\\\\ 
+0 & 0.5I\_{3\times 3}&0.5I\_{3\times 3}&0\_{3\times 6}\\\\ 
+0 & 0.5I\_{3\times 3}&-0.5I\_{3\times 3}&0\_{3\times 6}\\\\ 
+0&0&0&I\_{6\times 6}\end{pmatrix}\_{15\times 15}\begin{pmatrix}L\\\\ \Delta\sigma\end{pmatrix}\_{15\times 1}
 $$
 如果仅仅设置了d或者w的分量，那么右边列向量就可以写成L和d，w分量的形式，而对应的中间转换矩阵的对应行仅保留对称元素为1
     
