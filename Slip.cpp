@@ -13,9 +13,9 @@ Slip::Slip(int number, Vector6d &slip_info, vector<double> &hardens, vector<doub
             if(temp_idx < 6) burgers_vec(temp_idx-3) = slip_info(temp_idx);
         }
     }
-    plane_norm_disp = (plane_norm_disp.transpose() * lattice_vec).transpose();
     burgers_vec = (burgers_vec.transpose() * lattice_vec).transpose();
-    plane_norm = plane_norm_disp / plane_norm_disp.norm();
+    plane_norm = get_plane_norm(plane_norm_disp, lattice_vec);
+    cout << "Plane normal of slip system " << num << " is " << plane_norm.transpose() << endl;
     schmidt = burgers_vec/burgers_vec.norm() * plane_norm.transpose();
     switch (flag_harden)
     {

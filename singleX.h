@@ -61,6 +61,7 @@ double set_precision(double num, int prec);
 double calc_relative_error(Vector6d &v1, Vector6d &v2);
 double calc_relative_error(double x, double y);
 double calc_equivalent_value(Matrix3d mat);
+Vector3d get_plane_norm(Vector3d &plane_norm_disp, Matrix3d &lattice_vec);
 Vector3d Euler_trans(Matrix3d euler_matrix);
 Vector6d tensor_trans_order(Matrix3d tensor);
 Vector6d get_vec_only_ith(Vector6d &vector_base, int i); 

@@ -336,3 +336,14 @@ double calc_relative_error(double x, double y){
     else return abs(x)-abs(y)/abs(x);
 }
 
+Vector3d get_plane_norm(Vector3d &plane_norm_disp, Matrix3d &lattice_vec){
+    double h = plane_norm_disp(0), k = plane_norm_disp(1), l = plane_norm_disp(2);
+    if (h == 0 && k == 0 && l == 0) return Vector3d::Zero();
+    Vector3d h_vec = (h==0)? Vector3d(1e10,0,0) : Vector3d(1/h,0,0);
+    Vector3d k_vec = (k==0)? Vector3d(0,1e10,0) : Vector3d(0,1/k,0);
+    Vector3d l_vec = (l==0)? Vector3d(0,0,1e10) : Vector3d(0,0,1/l);
+    Vector3d vec_one = ((k_vec - h_vec).transpose() * lattice_vec);
+    Vector3d vec_two = ((l_vec - k_vec).transpose() * lattice_vec);
+    Vector3d norm = vec_one.cross(vec_two);
+    return norm / norm.norm();
+}
