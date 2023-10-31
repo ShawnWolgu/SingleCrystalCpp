@@ -92,7 +92,7 @@ vector<double> waiting_time_grad(double stress_eff, double resistance_slip, doub
     double grad_term = 0;
     if (act_energy != 500*k_boltzmann*temperature && act_energy != -500*k_boltzmann*temperature) 
         grad_term = - act_energy_r * energy_expo * pow((abs(stress_eff)/resistance_slip), energy_expo-1) / (k_boltzmann * temperature);
-    vector<double> result ={ grad_term*waiting_time*MPa_to_Pa, waiting_time };
+    vector<double> result ={ grad_term*waiting_time*MPa_to_Pa/resistance_slip, waiting_time };
     return result;
 }
 
