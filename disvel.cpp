@@ -23,7 +23,6 @@ double Slip::disl_velocity(double rss){
            energy_expo = harden_params[5], speed_sat = harden_params[6], c_drag = harden_params[7];
     double burgers = update_params[0], mean_free_path = update_params[1], forest_stress = update_params[3];
     double stress_eff = abs(rss) - forest_stress;
-    drag_stress = max(0., stress_eff);
     if (stress_eff >= 0.0) {
         t_wait = waiting_time(stress_eff, resistance_slip, act_energy_r, frequency_r, energy_expo, temperature);
         t_run = running_time(stress_eff, c_drag, speed_sat, mean_free_path, burgers, temperature);
@@ -52,7 +51,6 @@ vector<double> Slip::disl_velocity_grad(double rss){
            energy_expo = harden_params[5], speed_sat = harden_params[6], c_drag = harden_params[7];
     double burgers = update_params[0], mean_free_path = update_params[1], forest_stress = update_params[3];
     double stress_eff = abs(rss) - forest_stress;
-    drag_stress = max(0., stress_eff);
     vector<double> result;
     if (stress_eff >= 0.0) {
         vector<double> dtwait_drss = waiting_time_grad(stress_eff, resistance_slip, act_energy_r, frequency_r, energy_expo, temperature);

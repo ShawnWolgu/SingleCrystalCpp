@@ -1,6 +1,9 @@
 #include "singleX.h"
 #include <Eigen/Eigenvalues>
 
+double set_precision(double num, int prec);
+Vector6d set_precision(Vector6d &num, int prec);
+Vector6d get_vec_only_ith(Vector6d &vector_base, int i); 
 Matrix6d cal_rotation_trans_6d_for_stiff(Matrix3d M);
 Matrix6d cal_rotation_trans_6d_for_compl(Matrix3d M);
 
@@ -46,17 +49,6 @@ void params_convert_to_matrix(Matrix<double, 15, 1> &params, Vector6d &unknown_p
     Vector6d temp_stress_incr = params(Eigen::seq(9,14));
     vel_grad_elas = tensor_trans_order_9(temp_vel_grad_elas);
     stress_incr = tensor_trans_order(temp_stress_incr);
-}
-
-Matrix3d calc_stress(Matrix3d strain_elastic, Matrix6d elastic_modulus){
-    Vector6d eps_elastic, sig_vector;
-    Matrix3d stress_tensor = Matrix3d::Identity();
-    Matrix6d strain_modi_tensor = Matrix6d::Zero();
-    strain_modi_tensor.diagonal() << 1,1,1,2,2,2;
-    eps_elastic = tensor_trans_order(strain_elastic);
-    sig_vector = elastic_modulus * strain_modi_tensor * eps_elastic;
-    stress_tensor = tensor_trans_order(sig_vector);
-    return stress_tensor;
 }
 
 Vector6d get_vec_only_ith(Vector6d &vector_base, int i){
@@ -267,12 +259,6 @@ Matrix3d tensor_rot_to_CryCoord(Matrix3d tensor, Matrix3d orientation){
 
 Matrix3d tensor_rot_to_RefCoord(Matrix3d tensor, Matrix3d orientation){
     return orientation.transpose() * tensor * orientation;
-}
-
-ostream &operator<<(ostream &os, const Slip &slip){
-    os << "Slip system: [" << slip.burgers_vec.transpose() << "](" << slip.plane_norm_disp.transpose() << "), CRSS = " << slip.crss << endl
-        << "Schmidt Matrix = " << endl << slip.schmidt;
-    return os;
 }
 
 int sign(double x){

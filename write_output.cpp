@@ -27,7 +27,7 @@ void outfile_initialization(){
 
 void outfile_initialization(Grain &grain){
     cout << "Output Files Initialing (Grain) ...." << endl;
-    int slip_num =  grain.slip_sys.size();
+    int slip_num =  grain.mode_sys.size();
 
     stress_step_file << "time,e11,e22,e33,e12,e13,e23,s11,s22,s33,s12,s13,s23" << endl;
     grain.print_stress_strain(stress_step_file);
@@ -131,8 +131,8 @@ void custom_output_initialization(Grain &grain){
 void print_custom(Grain &grain){
     custom_output_file << grain.strain_tensor(0,0) << ',' << grain.strain_tensor(1,1) << ',' << grain.strain_tensor(2,2);// << ',' << grain.slip_sys[4].update_params[0];
     //Matrix3d U = (grain.orientation.transpose() * grain.orient_ref).inverse()*grain.deform_grad_elas;
-    for (Slip &slip_component : grain.slip_sys) {
-	custom_output_file << ',' << (slip_component.custom_var);// cross_in - slip_component.cross_out;
+    for (auto &mode_component : grain.mode_sys) {
+	custom_output_file << ',' << (mode_component->custom_var);// cross_in - slip_component.cross_out;
     }
     custom_output_file << endl;
 }

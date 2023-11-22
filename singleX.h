@@ -32,7 +32,10 @@ extern vector<double> euler_line_input;
 
 // [classes]
 class Grain;
+class PMode;
 class Slip;
+class Twin;
+enum mode_type {slip, twin, undefined};
 
 // [file read]
 void set_config();
@@ -57,18 +60,14 @@ int sign(double x);
 int heaviside(double x);
 int get_interaction_mode(Vector3d burgers_i, Vector3d plane_i, Vector3d burgers_j, Vector3d plane_j);
 double cal_cosine(Vector3d vec_i, Vector3d vec_j);
-double set_precision(double num, int prec);
 double calc_relative_error(Vector6d &v1, Vector6d &v2);
 double calc_relative_error(double x, double y);
 double calc_equivalent_value(Matrix3d mat);
 Vector3d get_plane_norm(Vector3d &plane_norm_disp, Matrix3d &lattice_vec);
 Vector3d Euler_trans(Matrix3d euler_matrix);
 Vector6d tensor_trans_order(Matrix3d tensor);
-Vector6d get_vec_only_ith(Vector6d &vector_base, int i); 
-Vector6d set_precision(Vector6d &num, int prec);
 Matrix3d tensor_trans_order(Vector6d tensor);
 Matrix3d tensor_trans_order_9(Matrix<double,9,1> tensor);
-Matrix3d calc_stress(Matrix3d strain_elastic, Matrix6d elastic_modulus);
 Matrix3d Euler_trans(Vector3d euler_vector);
 Matrix3d Rodrigues(Matrix3d spin_elas);
 Matrix3d vel_bc_to_vel_grad(Matrix3d vel_bc_tensor);
@@ -82,11 +81,14 @@ Matrix<double,9,1> vel_to_dw(Matrix3d tensor);
 // [dislocation velocity model]
 
 // [class members]
-class Slip {
+class PMode {
 public:
-    Vector3d burgers_vec, plane_norm, plane_norm_disp;
-    Matrix3d schmidt;
-    int num = -1; bool flag_active;
+    Vector3d burgers_vec, plane_norm;
+    int num = -1;
+    mode_type type = undefined;
+    bool flag_active;
+    double SSD_density, crss, acc_strain, disl_vel, custom_var = 0.0, rss = 0.0, t_wait = 0.0, t_run = 0.0, rho_init=0.0, rho_H = 0.0;
+    double ref_strain_rate = 0.001, rate_sen = m, shear_rate, ddgamma_dtau, shear_modulus;
     /*
      * [velocity parameters] 
      *  1. MFP control coeffient, 2. reference frequency, 3. activation energy, 4. slip resistance, 5. energy exponent
@@ -98,55 +100,77 @@ public:
      * [DD evolution parameters] 
      *  0. SSD_density, 9. nucleation coefficient, 10. multiplication coefficient, 11. drag stress D, 12. reference strain rate, 13. c/g 
      */
-    vector<double> harden_params;
-    //update_params: 0: burgers, 1: mean_free_path, 2: disl_density_resist, 3: forest_stress
-    vector<double> update_params; 
-    vector<double> latent_params;
-    double ref_strain_rate = 0.001, rate_sen = m, strain_rate_slip, ddgamma_dtau, shear_modulus, SSD_density, crss, acc_strain, disl_vel, rho_sat = 0.0, custom_var = 0.0, drag_stress = 0.0;
-    double ref_rate = 0.0, rho_mov = 0.0, crss_factor = 0.0, rho_init=0.0, rho_H = 0.0, rss = 0.0;
-    double t_wait = 0.0, t_run = 0.0;
-    Slip();
-    Slip(int slip_num, Vector6d &slip_info, vector<double> &hardens, vector<double> &latents, Matrix3d lattice_vec, double f_active);
+    /* update_params: 0: burgers, 1: mean_free_path, 2: disl_density_resist, 3: forest_stress */
+    /* [Twin parameters] */
+    /* 0. tau_0, 1. tau_1, 2. h_0, 3. h_1, 4. twin_strain, 5. SRS, 6. low_threshold, 7. high_threshold*/
+    vector<double> harden_params, update_params, latent_params;
+    Matrix3d schmidt;
+    PMode();
+    PMode(int slip_num, Vector6d &slip_info, vector<double> &hardens, vector<double> &latents, Matrix3d lattice_vec, double f_active);
+    void cal_shear_modulus(Matrix6d elastic_modulus);
     double cal_rss(Matrix3d stress_tensor);
-    Matrix3d dL_tensor();
+    virtual void cal_strain(Grain &grain, Matrix3d stress_tensor) {};
+    virtual void cal_ddgamma_dtau(Matrix3d stress_tensor) {};
+    virtual void update_status(Grain &grain) {};
+    virtual void update_ssd(Matrix3d dstrain, Matrix3d orientation) {};
+    virtual void update_rho_hard(vector<PMode*> mode_sys) {};
+    virtual Matrix3d dL_tensor(double twin_frac);
     Matrix3d dstrain_tensor();
     Matrix3d drotate_tensor();
     Matrix6d ddp_dsigma();
     Matrix6d dwp_dsigma();
-    void cal_strain(Grain &grain, Matrix3d stress_tensor);
-    void cal_ddgamma_dtau(Matrix3d stress_tensor);
-    void cal_shear_modulus(Matrix6d elastic_modulus);
-    void update_status(Grain &grain);
-    void update_ssd(Matrix3d dstrain, Matrix3d orientation);
-    void update_rho_hard(vector<Slip> &slip_sys);
-    void update_lhparams(Matrix3d dstrain);
-    void update_cross_slip(vector<Slip> &slip_sys, Matrix3d stress_tensor);
-    void update_rho_mov(vector<Slip> &slip_sys);
-    void update_surface_nuc(Matrix3d stress_tensor);
-private:
-    void cal_strain_pow(Matrix3d stress_tensor);
-    void cal_strain_ddhard(Matrix3d stress_tensor, double strain_rate);
-    void cal_strain_disvel(Matrix3d stress_tensor);
-    void cal_ddgamma_dtau_pow(Matrix3d stress_tensor);
-    void cal_ddgamma_dtau_ddhard(Matrix3d stress_tensor);
-    void cal_ddgamma_dtau_disvel(Matrix3d stress_tensor);
-    void update_ddhard(vector<Slip> &slip_sys, MatrixXd lat_hard_mat, double bv);
-    void update_disvel(vector<Slip> &slip_sys, MatrixXd lat_hard_mat, double bv);
-    void update_voce(vector<Slip> &slip_sys, MatrixXd lat_hard_mat);
-    double disl_velocity(double rss);
-    vector<double> disl_velocity_grad(double rss);
 };
 
+class Slip : public PMode{
+public:
+    double rho_sat = 0.0, rho_mov = 0.0;
+    Slip();
+    Slip(int slip_num, Vector6d &slip_info, vector<double> &hardens, vector<double> &latents, Matrix3d lattice_vec, double f_active);
+    void cal_strain(Grain &grain, Matrix3d stress_tensor) override;
+    void cal_ddgamma_dtau(Matrix3d stress_tensor) override;
+    void update_status(Grain &grain) override;
+    void update_ssd(Matrix3d dstrain, Matrix3d orientation) override;
+    void update_rho_hard(vector<PMode*> mode_sys) override;
+private:
+    void cal_strain_pow(Matrix3d stress_tensor);
+    void cal_strain_disvel(Matrix3d stress_tensor);
+    void cal_ddgamma_dtau_pow(Matrix3d stress_tensor);
+    void cal_ddgamma_dtau_disvel(Matrix3d stress_tensor);
+    void update_disvel(vector<PMode*> mode_sys, MatrixXd lat_hard_mat, double bv);
+    void update_voce(vector<PMode*> mode_sys, MatrixXd lat_hard_mat);
+    double disl_velocity(double rss);
+    vector<double> disl_velocity_grad(double rss);
+    //Unused functions
+    void update_lhparams(Matrix3d dstrain);
+    void update_cross_slip(vector<PMode> &mode_sys, Matrix3d stress_tensor);
+    void update_rho_mov(vector<PMode> &mode_sys);
+    void update_surface_nuc(Matrix3d stress_tensor);
+};
+
+class Twin : public PMode{
+public:
+    double twin_frac = 0.0;
+    Twin();
+    Twin(int slip_num, Vector6d &slip_info, vector<double> &hardens, vector<double> &latents, Matrix3d lattice_vec, double f_active);
+    Matrix3d dL_tensor(double grain_twin_frac) override;
+    void cal_strain(Grain &grain, Matrix3d stress_tensor) override;
+    void cal_ddgamma_dtau(Matrix3d stress_tensor) override;
+    void update_status(Grain &grain) override;
+    void update_ssd(Matrix3d dstrain, Matrix3d orientation) override;
+private:
+    enum twin_status {inactive, growth, saturated};
+    twin_status status = inactive;
+};
 
 class Grain{
 public:
     Matrix3d lattice_vec, deform_grad, deform_grad_elas, deform_grad_plas, stress_tensor, strain_tensor, orientation, orient_ref;
     Matrix6d elastic_modulus, elastic_modulus_ref;
     MatrixXd lat_hard_mat;
-    vector<Slip> slip_sys;
-    double strain_rate = 1e-3;
+    vector<PMode*> mode_sys;
+    double strain_rate = 1e-3, twin_frac = 0.0;
     Grain();
-    Grain(Matrix6d elastic_mod, Matrix3d lat_vecs, vector<Slip> s, MatrixXd latent_matrix, Matrix3d orient_Mat);
+    Grain(Matrix6d elastic_mod, Matrix3d lat_vecs, vector<PMode*> s, MatrixXd latent_matrix, Matrix3d orient_Mat);
     void update_status(Matrix3d L_dt_tensor, Matrix3d vel_grad_flag, Matrix3d stress_incr, Matrix3d dstress_flag);
     void print_stress_strain(ofstream &os);
     void print_stress_strain_screen();

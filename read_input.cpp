@@ -2,11 +2,12 @@
 
 bool hasEnding (std::string const &fullString, std::string const &ending);
 void print_harden_law();
-void add_slips(ifstream &is, vector<Slip> &slips, Matrix3d lattice_vecs);
+void add_slips(ifstream &is, vector<PMode*> &modes, Matrix3d lattice_vecs);
+void add_twins(ifstream &is, vector<PMode*> &modes, Matrix3d lattice_vecs);
 void vel_grad_modify(char &flag_1, char &flag_2, int compoidx, Matrix3d &vel_grad_tensor);
 void step_config(string in_str);
 string get_next_line(ifstream &infile);
-MatrixXd latent_hardening_matrix(vector<Slip> &slips);
+MatrixXd latent_hardening_matrix(vector<PMode*> modes);
 Matrix6d read_elastic(ifstream &is);
 Matrix3d read_lattice(ifstream &is);
 Matrix3d read_orientation(ifstream &is);
@@ -48,7 +49,7 @@ Grain read_grain(){
     string input_line;
     Matrix6d elastic_modulus;
     Matrix3d lattice_vecs, orientation;
-    vector<Slip> slips;
+    vector<PMode*> modes;
     while (!input_file.eof())
     {
         getline(input_file, input_line);
@@ -79,7 +80,11 @@ Grain read_grain(){
                 continue;
             }
             if((input_line.find("Slip") != input_line.npos) || (input_line.find("slip") != input_line.npos)) {
-                add_slips(input_file, slips, lattice_vecs); 
+                add_slips(input_file, modes, lattice_vecs); 
+                continue;
+            }
+            if((input_line.find("Twin") != input_line.npos) || (input_line.find("twin") != input_line.npos)) {
+                add_twins(input_file, modes, lattice_vecs); 
                 continue;
             }
             continue;            
@@ -87,10 +92,10 @@ Grain read_grain(){
         else{continue;}
     }
     input_file.close();
-    for(auto &islip : slips) islip.cal_shear_modulus(elastic_modulus);
-    MatrixXd lat_hard_mat = latent_hardening_matrix(slips);
+    for(auto &imode : modes) imode->cal_shear_modulus(elastic_modulus);
+    MatrixXd lat_hard_mat = latent_hardening_matrix(modes);
     cout << "Latent Hardening Matrix:" << endl << lat_hard_mat << endl;
-    return Grain(elastic_modulus, lattice_vecs, slips, lat_hard_mat, orientation);
+    return Grain(elastic_modulus, lattice_vecs, modes, lat_hard_mat, orientation);
 }
 
 Matrix6d read_elastic(ifstream &is){
@@ -179,10 +184,10 @@ void print_harden_law(){
     }
 }
 
-void add_slips(ifstream &is, vector<Slip> &slips, Matrix3d lattice_vecs){
+void add_slips(ifstream &is, vector<PMode*> &modes, Matrix3d lattice_vecs){
     string input_line;
     vector<Vector6d> slip_infos;
-    vector<double> harden_params, latent_params, surf_params, active_frac;
+    vector<double> harden_params, latent_params, active_frac;
     double temp;
     int slip_num = 0;
 
@@ -210,27 +215,75 @@ void add_slips(ifstream &is, vector<Slip> &slips, Matrix3d lattice_vecs){
     while(lat_stream >> temp) latent_params.push_back(temp);
 
     for(int islip = 0; islip != slip_num; ++islip){
-        int crt_num = slips.size();
-        Slip temp_slip(crt_num, slip_infos[islip], harden_params, latent_params, lattice_vecs, active_frac[islip]);
+        int crt_num = modes.size();
+        modes.push_back(new Slip (crt_num, slip_infos[islip], harden_params, latent_params, lattice_vecs, active_frac[islip]));
         cout << "Slip No." << crt_num << endl;
         cout << slip_infos[islip].transpose() << endl;
         for (auto i: harden_params) std::cout << i << ' ';
         cout << endl;
         for (auto i: latent_params) std::cout << i << ' ';
         cout << endl;
-        slips.push_back(temp_slip);
     }
 }
 
-MatrixXd latent_hardening_matrix(vector<Slip> &slips){
-    int count_slip = slips.size();
-    MatrixXd lat_hard_mat; lat_hard_mat.resize(count_slip,count_slip);
-    for (auto islip : slips){
-        for (auto jslip : slips){
-            if (islip.num == jslip.num) lat_hard_mat(islip.num,jslip.num) = 1;
+void add_twins(ifstream &is, vector<PMode*> &modes, Matrix3d lattice_vecs){
+    string input_line;
+    vector<Vector6d> twin_infos;
+    vector<double> harden_params, latent_params, active_frac;
+    double temp;
+    int twin_num = 0;
+
+    getline(is, input_line);
+    twin_num = atoi(&input_line[0]);
+    cout << "Add " << twin_num << " Twin Systems" << endl;
+    for(int itwin = 0; itwin != twin_num; ++itwin){
+        getline(is, input_line);
+        stringstream stream(input_line);
+        Vector6d p_b;  double frac_active = 1.; 
+        stream >> p_b(0) >> p_b(1) >> p_b(2) >> p_b(3) >> p_b(4) >> p_b(5);
+        if (stream.rdbuf()->in_avail() > 0 && stream >> frac_active) {} 
+        twin_infos.push_back(p_b);
+        active_frac.push_back(frac_active);
+    }
+
+    getline(is, input_line);
+    while(input_line[0] == '#')     getline(is, input_line);
+    stringstream stream(input_line);
+    while(stream >> temp) harden_params.push_back(temp);
+
+    getline(is, input_line);
+    while(input_line[0] == '#')     getline(is, input_line);
+    stringstream lat_stream(input_line);
+    while(lat_stream >> temp) latent_params.push_back(temp);
+
+    for(int itwin = 0; itwin != twin_num; ++itwin){
+        int crt_num = modes.size();
+        modes.push_back(new Twin (crt_num, twin_infos[itwin], harden_params, latent_params, lattice_vecs, active_frac[itwin]));
+        cout << "Twin No." << crt_num << endl;
+        cout << twin_infos[itwin].transpose() << endl;
+        for (auto i: harden_params) std::cout << i << ' ';
+        cout << endl;
+        for (auto i: latent_params) std::cout << i << ' ';
+        cout << endl;
+    }
+}
+
+MatrixXd latent_hardening_matrix(vector<PMode*> modes){
+    int count_mode = modes.size();
+    MatrixXd lat_hard_mat; lat_hard_mat.resize(count_mode,count_mode);
+    for (auto imode : modes){
+        for (auto jmode : modes){
+            if (imode->num == jmode->num) lat_hard_mat(imode->num,jmode->num) = 1;
             else{
-                int mode = get_interaction_mode(islip.burgers_vec, islip.plane_norm, jslip.burgers_vec, jslip.plane_norm);
-                lat_hard_mat(islip.num,jslip.num) = islip.latent_params[mode];
+                int mode = 0;
+                if (imode->type == slip && jmode->type == slip) {
+                    mode = get_interaction_mode(imode->burgers_vec, imode->plane_norm, jmode->burgers_vec, jmode->plane_norm);
+                }
+                else if (imode->type == slip && jmode->type == twin) mode = 6;
+                else if (imode->type == twin && jmode->type == slip) mode = 0; // twin-slip interaction;
+                else if (imode->type == twin && jmode->type == twin) mode = 1; // twin-twin interaction;
+                else mode = 0;
+                lat_hard_mat(imode->num,jmode->num) = imode->latent_params[mode];
             }
         }
     }
