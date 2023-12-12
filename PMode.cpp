@@ -3,7 +3,7 @@
 
 PMode::PMode() = default;
 
-Matrix3d PMode::dL_tensor(double twin_frac) {return schmidt * shear_rate * dtime;}
+Matrix3d PMode::dL_tensor() {return schmidt * shear_rate * dtime;}
 
 Matrix6d PMode::ddp_dsigma() {
     Vector6d symSchmidt_6d = strain_modi_tensor * tensor_trans_order((Matrix3d)(0.5*(schmidt+schmidt.transpose())));

@@ -26,17 +26,12 @@ Twin::Twin(int number, Vector6d &slip_info, vector<double> &hardens, vector<doub
     twin_frac = 0.0;
 }
 
-Matrix3d Twin::dL_tensor(double grain_twin_frac) {
-    double equivalent_frac = (1-grain_twin_frac) + twin_frac;
-    return schmidt * shear_rate * dtime * equivalent_frac;
-}
-
 void Twin::cal_strain(Grain &grain, Matrix3d stress_tensor){
     double rss_matrix = cal_rss(stress_tensor);
-    double rate_ = ref_strain_rate * pow(abs(rss_matrix / crss), 1/rate_sen)* sign(rss_matrix); 
+    double rate_ = ref_strain_rate * pow(abs(rss_matrix / crss), 1/rate_sen)* sign(rss_matrix) * equiv_frac; 
     switch (status) {
     inactive:
-shear_rate = (rss_matrix > 0) ? rate_ : 0.0; // rate_TN;
+        shear_rate = (rss_matrix > 0) ? rate_ : 0.0; // rate_TN;
         break;
     growth:
         shear_rate = rate_;
@@ -53,8 +48,8 @@ shear_rate = (rss_matrix > 0) ? rate_ : 0.0; // rate_TN;
 
 void Twin::cal_ddgamma_dtau(Matrix3d stress_tensor){
     double rss_matrix = cal_rss(stress_tensor);       
-    double gradient_ = ref_strain_rate * pow(abs(rss_matrix / crss), 1/rate_sen-1) * sign(rss_matrix) / rate_sen / crss * sign(rss_matrix); 
-    double rate_ = ref_strain_rate * pow(abs(rss_matrix / crss), 1/rate_sen) * sign(rss_matrix); 
+    double gradient_ = ref_strain_rate * pow(abs(rss_matrix / crss), 1/rate_sen-1) * sign(rss_matrix) / rate_sen / crss * sign(rss_matrix) * equiv_frac; 
+    double rate_ = ref_strain_rate * pow(abs(rss_matrix / crss), 1/rate_sen) * sign(rss_matrix) * equiv_frac; 
     switch (status){
     inactive:
         shear_rate = (rss_matrix > 0) ? rate_ : 0.0; // rate_TN;
@@ -86,6 +81,8 @@ void Twin::update_status(Grain &grain){
     double dtau_by_dGamma = h_1 + (abs(h_0/tau_1)*tau_1 - h_1) * exp(-Gamma*abs(h_0/tau_1)) + abs(h_0/tau_1)*h_1*Gamma*exp(-Gamma*abs(h_0/tau_1));
     for(auto &isys : grain.mode_sys)
         crss += abs(isys->shear_rate) * dtime * grain.lat_hard_mat(num,isys->num) * dtau_by_dGamma;
+    
+    equiv_frac = (1-grain.twin_frac) + twin_frac;
 }
 
 void Twin::update_ssd(Matrix3d dstrain, Matrix3d orientation){

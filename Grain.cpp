@@ -18,7 +18,7 @@ Matrix3d Grain::get_vel_grad_plas(Matrix3d stress_3d){
     Matrix3d stress_grain = tensor_rot_to_CryCoord(stress_3d, orientation);
     for (auto &mode_component : mode_sys) {
         mode_component->cal_strain(*this, stress_grain);
-	vel_grad_plas += mode_component->dL_tensor(twin_frac);
+	vel_grad_plas += mode_component->dL_tensor();
     }
     return tensor_rot_to_RefCoord(vel_grad_plas, orientation);
 }

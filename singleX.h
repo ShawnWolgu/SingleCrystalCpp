@@ -114,7 +114,7 @@ public:
     virtual void update_status(Grain &grain) {};
     virtual void update_ssd(Matrix3d dstrain, Matrix3d orientation) {};
     virtual void update_rho_hard(vector<PMode*> mode_sys) {};
-    virtual Matrix3d dL_tensor(double twin_frac);
+    Matrix3d dL_tensor();
     Matrix3d dstrain_tensor();
     Matrix3d drotate_tensor();
     Matrix6d ddp_dsigma();
@@ -149,10 +149,9 @@ private:
 
 class Twin : public PMode{
 public:
-    double twin_frac = 0.0;
+    double twin_frac = 0.0, equiv_frac = 0.0;
     Twin();
     Twin(int slip_num, Vector6d &slip_info, vector<double> &hardens, vector<double> &latents, Matrix3d lattice_vec, double f_active);
-    Matrix3d dL_tensor(double grain_twin_frac) override;
     void cal_strain(Grain &grain, Matrix3d stress_tensor) override;
     void cal_ddgamma_dtau(Matrix3d stress_tensor) override;
     void update_status(Grain &grain) override;
