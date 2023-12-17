@@ -12,7 +12,7 @@
 #include <math.h>
 #include <tclap/CmdLine.h>
 using namespace std;
-using Eigen::Matrix3d, Eigen::Vector3d, Eigen::Matrix, Eigen::MatrixXd, Eigen::all, Eigen::last;
+using Eigen::Matrix3d, Eigen::Vector3d, Eigen::Matrix, Eigen::MatrixXd, Eigen::VectorXd, Eigen::all, Eigen::last;
 typedef Matrix<double, 6, 1> Vector6d;
 typedef Matrix<double, 6, 6> Matrix6d;
 
@@ -63,6 +63,8 @@ double cal_cosine(Vector3d vec_i, Vector3d vec_j);
 double calc_relative_error(Vector6d &v1, Vector6d &v2);
 double calc_relative_error(double x, double y);
 double calc_equivalent_value(Matrix3d mat);
+double calc_first_principal(Matrix3d mat);
+double relative_std(VectorXd &vec);
 Vector3d get_plane_norm(Vector3d &plane_norm_disp, Matrix3d &lattice_vec);
 Vector3d Euler_trans(Matrix3d euler_matrix);
 Vector6d tensor_trans_order(Matrix3d tensor);
@@ -101,8 +103,9 @@ public:
      *  0. SSD_density, 9. nucleation coefficient, 10. multiplication coefficient, 11. drag stress D, 12. reference strain rate, 13. c/g 
      */
     /* update_params: 0: burgers, 1: mean_free_path, 2: disl_density_resist, 3: forest_stress */
-    /* [Twin parameters] */
-    /* 0. tau_0, 1. tau_1, 2. h_0, 3. h_1, 4. twin_strain, 5. SRS, 6. low_threshold, 7. high_threshold*/
+    /* 
+     * [Twin parameters] 
+     * 0. tau_0, 1. tau_1, 2. h_0, 3. h_1, 4. twin_strain, 5. SRS, 6. low_threshold, 7. high_threshold*/
     vector<double> harden_params, update_params, latent_params;
     Matrix3d schmidt;
     PMode();

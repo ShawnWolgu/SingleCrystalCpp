@@ -290,6 +290,11 @@ double calc_equivalent_value(Matrix3d mat){
     return sqrt(2./3. * sum);
 }
 
+double calc_first_principal(Matrix3d mat){
+    Vector3d eigens = mat.eigenvalues().cwiseAbs();
+    return eigens.maxCoeff();
+}
+
 Vector6d set_precision(Vector6d &num, int prec){
     Vector6d result; result << num;
     for (auto &inum : result){
@@ -320,6 +325,13 @@ double calc_relative_error(Vector6d &v1, Vector6d &v2){
 double calc_relative_error(double x, double y){
     if (x == 0 && y == 0) return 0;
     else return abs(x)-abs(y)/abs(x);
+}
+
+double relative_std(VectorXd &vec){
+    double mean = vec.mean();
+    double sum = 0;
+    for (int i = 0; i < vec.size(); i++) sum += pow(vec(i) - mean,2);
+    return sqrt(sum/vec.size())/mean;
 }
 
 Vector3d get_plane_norm(Vector3d &plane_norm_disp, Matrix3d &lattice_vec){
