@@ -4,7 +4,7 @@ Grain::Grain(): deform_grad(Matrix3d::Identity()), deform_grad_elas(deform_grad)
                 strain_tensor(Matrix3d::Zero()), orientation(Matrix3d::Identity()), elastic_modulus(Matrix6d::Identity()), elastic_modulus_ref(Matrix6d::Identity()) {};
 
 Grain::Grain(Matrix6d elastic_mod, Matrix3d lat_vecs, vector<PMode*> s, MatrixXd latent_matrix, Matrix3d orient_Mat){
-    deform_grad = Matrix3d::Identity(), deform_grad_elas = deform_grad, deform_grad_plas = stress_tensor = Matrix3d::Zero(), \
+    deform_grad = Matrix3d::Identity(), deform_grad_elas = deform_grad, deform_grad_plas = deform_grad ,stress_tensor = Matrix3d::Zero(), \
     strain_tensor = Matrix3d::Zero(), orient_ref = orientation = orient_Mat, elastic_modulus_ref = elastic_mod,  elastic_modulus = rotate_6d_stiff_modu(elastic_mod,orientation.transpose());
     lattice_vec = lat_vecs;
     lat_hard_mat = latent_matrix;
@@ -186,9 +186,11 @@ Matrix<double, 6, 3> Grain::get_Sigma_ik(Vector6d &stress_6d){
 }
 
 void Grain::print_stress_strain(ofstream &os){
+    Matrix3d plastic_strain = 0.5 * (deform_grad_plas.transpose() * deform_grad_plas - Matrix3d::Identity());
+    double pe = calc_equivalent_value(plastic_strain);
     os << norm_time << ',' << strain_tensor(0,0) << ',' << strain_tensor(1,1) << ','  << strain_tensor(2,2) << ',' << strain_tensor(0,1) << ',' 
        << strain_tensor(0,2) << ',' << strain_tensor(1,2) << ','  << stress_tensor(0,0) << ',' << stress_tensor(1,1) << ',' 
-       << stress_tensor(2,2) << ',' << stress_tensor(0,1) << ','  << stress_tensor(0,2) << ',' << stress_tensor(1,2)  << endl;
+       << stress_tensor(2,2) << ',' << stress_tensor(0,1) << ','  << stress_tensor(0,2) << ',' << stress_tensor(1,2) << ',' << pe << endl;
 }
 
 void Grain::print_stress_strain_screen(){

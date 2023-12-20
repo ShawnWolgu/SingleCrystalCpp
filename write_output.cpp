@@ -29,9 +29,9 @@ void outfile_initialization(Grain &grain){
     cout << "Output Files Initialing (Grain) ...." << endl;
     int slip_num =  grain.mode_sys.size();
 
-    stress_step_file << "time,e11,e22,e33,e12,e13,e23,s11,s22,s33,s12,s13,s23" << endl;
+    stress_step_file << "time,e11,e22,e33,e12,e13,e23,s11,s22,s33,s12,s13,s23,pe" << endl;
     grain.print_stress_strain(stress_step_file);
-    stress_file << "time,e11,e22,e33,e12,e13,e23,s11,s22,s33,s12,s13,s23" << endl;
+    stress_file << "time,e11,e22,e33,e12,e13,e23,s11,s22,s33,s12,s13,s23,pe" << endl;
     grain.print_stress_strain(stress_file);
     cout << "This grain has " << slip_num << " slip systems" << endl;
     title_output(crss_file,"e11,e22,e33,acc_strain,","crss", slip_num);
