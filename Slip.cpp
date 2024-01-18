@@ -117,59 +117,6 @@ void Slip::update_voce(vector<PMode*> mode_sys, MatrixXd lat_hard_mat){
     crss += abs(isys->shear_rate) * dtime * lat_hard_mat(num,isys->num) * dtau_by_dGamma;
 }
 
-/* Update acc_strain or SSD_density */
-void Slip::update_ssd(Matrix3d strain_rate, Matrix3d orientation){
-    /*
-     * [velocity parameters] 
-     *  1. MFP control coeffient, 2. reference frequency, 3. activation energy, 4. slip resistance, 5. energy exponent
-     *  6. saturated speed, 7. drag coefficient
-     * [hardening parameters] 
-     *  8. forest hardening coefficient
-     * [DD evolution parameters] 
-     *  0. SSD_density, 9. nucleation coefficient, 10. nucleation threshold stress, 11. multiplication coefficient
-     *  12. drag stress D, 13. reference strain rate, 14. c/g 
-     *
-     * update parameters:
-     * 0: burgers, 1: mean_free_path, 2: disl_density_resist, 3: forest_stress
-     */
-    if (flag_harden == 0) acc_strain += abs(shear_rate) * dtime;
-    if (flag_harden == 1){ 
-        double c_forest = harden_params[8], c_nuc = harden_params[9], tau_nuc = harden_params[10],\
-               c_multi = harden_params[11], c_annih = 0.,\
-               D = harden_params[12] * 1e6, ref_srate = harden_params[13], gg = c_forest/harden_params[14],\
-               burgers = update_params[0], mfp = update_params[1], forest_stress = update_params[3]; 
-        /* double equi_strain_rate = calc_equivalent_value(strain_rate); */
-        /* double equi_strain_rate = calc_first_principal(strain_rate); */
-        /* c_multi = (custom_var > 1) ? 1/log(exp(1) * custom_var)*c_multi : c_multi; */
-        double equi_strain_rate = strain_rate(2,2);
-        rho_sat = c_forest * burgers / gg * (1-k_boltzmann * temperature/D/pow(burgers,3) * log(abs(equi_strain_rate)/ref_srate));
-        rho_sat = max(pow(1/rho_sat,2), 0.5*SSD_density);
-        double term_nuc = c_nuc * max(abs(rss)-tau_nuc,0.) / (shear_modulus * burgers * burgers);
-        double term_multi = c_multi / mfp; 
-        c_annih = (term_multi + term_nuc) / rho_sat;
-        SSD_density += (term_multi + term_nuc - c_annih * SSD_density) * abs(shear_rate) * dtime;
-        rho_mov = SSD_density;
-        if(SSD_density < rho_init) rho_init = SSD_density;
-    }
-}
-
-void Slip::update_rho_hard(vector<PMode*> mode_sys){
-    rho_H = SSD_density;
-    double coplanar = 0; int active_num = 0;
-    bool open = true;
-    for (auto &isys : mode_sys) {
-        if (isys->type != slip) {open = false; continue;}
-        active_num += isys->SSD_density > isys->rho_init ? 1 : 0;
-        if (isys->num == num) continue;
-        int inter_mode = get_interaction_mode(burgers_vec, plane_norm, isys->burgers_vec, isys->plane_norm);
-        if (inter_mode != 2) continue;
-        if (coplanar == 0.) coplanar += isys->SSD_density;
-        else coplanar = min(coplanar, isys->SSD_density);
-    }
-    open = open && (active_num > 0);
-    if (open) rho_H += coplanar;
-}
-
 void Slip::update_disvel(vector<PMode*> mode_sys, MatrixXd lat_hard_mat, double bv_norm){
     /*
      * [velocity parameters] 
@@ -187,11 +134,8 @@ void Slip::update_disvel(vector<PMode*> mode_sys, MatrixXd lat_hard_mat, double 
     double c_mfp = harden_params[1], resistance_slip = harden_params[4], c_forest = harden_params[8], HP_stress = 0;
     double burgers, disl_density_for, disl_density_resist, joint_density, forest_stress, mean_free_path;
     disl_density_for = disl_density_resist = joint_density = 0;
-    VectorXd custom_vec = VectorXd::Zero(12); int count = 0;
     for(auto &isys : mode_sys){
         disl_density_for += isys->SSD_density;
-        custom_vec(count) = isys->SSD_density;  count++;
-        custom_var += pow(isys->SSD_density,2);
         disl_density_resist += isys->rho_H * lat_hard_mat(num,isys->num);
         if(isys->num != num) joint_density += lat_hard_mat(num,isys->num) * sqrt(isys->rho_H-isys->rho_init) * sqrt(rho_H-rho_init);
     }
@@ -199,11 +143,11 @@ void Slip::update_disvel(vector<PMode*> mode_sys, MatrixXd lat_hard_mat, double 
     double crss_factor = 0.707*joint_density+disl_density_resist;
     forest_stress = c_forest * shear_modulus * burgers * sqrt(crss_factor);
     mean_free_path = c_mfp / sqrt(disl_density_for);
-    custom_var = relative_std(custom_vec);
     crss = forest_stress + resistance_slip;
     acc_strain += abs(shear_rate) * dtime;
     update_params[0] = burgers, update_params[1] = mean_free_path, \
     update_params[2] = disl_density_resist, update_params[3] = forest_stress;
+    custom_var = crss_factor;
 }
 
 void Slip::cal_ddgamma_dtau(Matrix3d stress_tensor){

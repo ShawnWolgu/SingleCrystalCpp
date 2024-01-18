@@ -144,6 +144,8 @@ private:
     double disl_velocity(double rss);
     vector<double> disl_velocity_grad(double rss);
     //Unused functions
+    void update_ssd_old(Matrix3d dstrain, Matrix3d orientation);
+    void update_rho_hard_old(vector<PMode*> mode_sys);
     void update_lhparams(Matrix3d dstrain);
     void update_cross_slip(vector<PMode> &mode_sys, Matrix3d stress_tensor);
     void update_rho_mov(vector<PMode> &mode_sys);

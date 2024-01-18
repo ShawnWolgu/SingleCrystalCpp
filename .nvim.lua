@@ -13,11 +13,10 @@ dap.configurations.cpp = {
         request = "launch";
         name = 'Debug';
         program = '${workspaceFolder}/build/SXCpp';
-        args = { '-l', '${workspaceFolder}/debug/Load/Load3e-3_plane.txt',
-            '-x', '${workspaceFolder}/debug/SingleX/SingleX_neuler.txt',
-            '-s', '0.1', '-o', '0.001', '-b', '0.1',
+        args = { '-l', '${workspaceFolder}/debug/loadfile',
+            '-x', '${workspaceFolder}/debug/SingleX_lr.txt',
             '-e', '0.2', '-E', '0', '-E', '0', '-E', '0', '-p' };
-        cwd = '${workspaceFolder}/debug/00_vim';
+        cwd = '${workspaceFolder}/debug';
         terminal = 'integrated';
         console = 'integratedTerminal';
     }
