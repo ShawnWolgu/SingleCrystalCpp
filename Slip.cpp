@@ -131,23 +131,22 @@ void Slip::update_disvel(vector<PMode*> mode_sys, MatrixXd lat_hard_mat, double 
      * update parameters:
      * 0: burgers, 1: mean_free_path, 2: disl_density_resist, 3: forest_stress
      */
+    double burgers = bv_norm * 1e-10, joint_factor = 0.0;
     double c_mfp = harden_params[1], resistance_slip = harden_params[4], c_forest = harden_params[8], HP_stress = 0;
-    double burgers, disl_density_for, disl_density_resist, joint_density, forest_stress, mean_free_path;
+    double disl_density_for, disl_density_resist, joint_density, forest_stress, mean_free_path;
     disl_density_for = disl_density_resist = joint_density = 0;
     for(auto &isys : mode_sys){
         disl_density_for += isys->SSD_density;
         disl_density_resist += isys->rho_H * lat_hard_mat(num,isys->num);
         if(isys->num != num) joint_density += lat_hard_mat(num,isys->num) * sqrt(isys->rho_H-isys->rho_init) * sqrt(rho_H-rho_init);
     }
-    burgers = bv_norm * 1e-10;
-    double crss_factor = 0.707*joint_density+disl_density_resist;
+    double crss_factor = joint_factor*joint_density+disl_density_resist;
     forest_stress = c_forest * shear_modulus * burgers * sqrt(crss_factor);
     mean_free_path = c_mfp / sqrt(disl_density_for);
     crss = forest_stress + resistance_slip;
     acc_strain += abs(shear_rate) * dtime;
     update_params[0] = burgers, update_params[1] = mean_free_path, \
     update_params[2] = disl_density_resist, update_params[3] = forest_stress;
-    custom_var = crss_factor;
 }
 
 void Slip::cal_ddgamma_dtau(Matrix3d stress_tensor){

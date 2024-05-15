@@ -89,7 +89,7 @@ public:
     int num = -1;
     mode_type type = undefined;
     bool flag_active;
-    double SSD_density, crss, acc_strain, disl_vel, custom_var = 0.0, rss = 0.0, t_wait = 0.0, t_run = 0.0, rho_init=0.0, rho_H = 0.0;
+    double SSD_density, crss, acc_strain, disl_vel, custom_var, rss = 0.0, t_wait = 0.0, t_run = 0.0, rho_init=0.0, rho_H = 0.0;
     double ref_strain_rate = 0.001, rate_sen = m, shear_rate, ddgamma_dtau, shear_modulus;
     /*
      * [velocity parameters] 
