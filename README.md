@@ -21,6 +21,19 @@
 
 [模型数学解释](/docs/%5BCN%5D%E6%95%B0%E5%AD%A6%E8%A7%A3%E9%87%8ANumerical%20Explanation.md)
 
+## 引用
+Sun X, Zhou K, Liu C, et al. A Crystal Plasticity Based Strain Rate Dependent Model across An Ultra-wide Range[J]. International Journal of Plasticity, 2024: 104056.
+
+```bibtex
+@article{sun2024crystal,
+  title={A Crystal Plasticity Based Strain Rate Dependent Model across An Ultra-wide Range},
+  author={Sun, Xiaochuan and Zhou, Kecheng and Liu, Chuhao and others},
+  journal={International Journal of Plasticity},
+  pages={104056},
+  year={2024},
+  publisher={Elsevier}
+}
+```
 
 # SingleCrystalCpp
 A simple crystal plasticity model for single crystal, developed in C++.
@@ -44,3 +57,17 @@ A simple crystal plasticity model for single crystal, developed in C++.
 [Input File Format (in Chinese)](/docs/%5BCN%5D%E8%BE%93%E5%85%A5%E6%96%87%E4%BB%B6%E6%A0%BC%E5%BC%8F%E5%8F%82%E8%80%83Input%20File%20Format.md) 
 
 [Model Explanation (in Chinese)](/docs/%5BCN%5D%E6%95%B0%E5%AD%A6%E8%A7%A3%E9%87%8ANumerical%20Explanation.md)
+
+## Citation
+Sun X, Zhou K, Liu C, et al. A Crystal Plasticity Based Strain Rate Dependent Model across An Ultra-wide Range[J]. International Journal of Plasticity, 2024: 104056.
+
+```bibtex
+@article{sun2024crystal,
+  title={A Crystal Plasticity Based Strain Rate Dependent Model across An Ultra-wide Range},
+  author={Sun, Xiaochuan and Zhou, Kecheng and Liu, Chuhao and others},
+  journal={International Journal of Plasticity},
+  pages={104056},
+  year={2024},
+  publisher={Elsevier}
+}
+```
