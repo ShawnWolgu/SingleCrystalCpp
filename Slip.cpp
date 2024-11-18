@@ -143,7 +143,7 @@ void Slip::update_disvel(vector<PMode*> mode_sys, MatrixXd lat_hard_mat, double 
     double crss_factor = joint_factor*joint_density+disl_density_resist;
     forest_stress = c_forest * shear_modulus * burgers * sqrt(crss_factor);
     mean_free_path = c_mfp / sqrt(disl_density_for);
-    crss = forest_stress + resistance_slip;
+    crss = forest_stress;
     acc_strain += abs(shear_rate) * dtime;
     update_params[0] = burgers, update_params[1] = mean_free_path, \
     update_params[2] = disl_density_resist, update_params[3] = forest_stress;
